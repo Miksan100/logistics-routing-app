@@ -17,33 +17,41 @@ function RangeSelector({ from, to, onFromChange, onToChange }: { from: string; t
 }
 
 function DriverBarChart({ drivers }: { drivers: DriverRow[] }) {
-  if (!drivers.length) return <p className="text-sm text-gray-400 text-center py-4">No data</p>;
+  if (!drivers.length) return <p className="text-sm text-gray-400 text-center py-8">No data</p>;
+  const CHART_H = 180;
   const maxTotal = Math.max(...drivers.map((d) => Number(d.total_jobs)), 1);
   return (
-    <div className="space-y-3">
-      {drivers.map((d) => {
-        const total = Number(d.total_jobs);
-        const completed = Number(d.completed);
-        const cancelled = Number(d.cancelled);
-        const totalPct = (total / maxTotal) * 100;
-        const completedPct = total > 0 ? (completed / total) * 100 : 0;
-        const cancelledPct = total > 0 ? (cancelled / total) * 100 : 0;
-        return (
-          <div key={d.id}>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-sm font-medium text-gray-700">{d.first_name} {d.last_name}</span>
-              <span className="text-xs text-gray-500">{completed}/{total} jobs · {d.completion_rate || 0}%</span>
-            </div>
-            <div className="h-5 bg-gray-100 rounded-full overflow-hidden" style={{ width: `${totalPct}%`, minWidth: '4px' }}>
-              <div className="h-full flex rounded-full overflow-hidden">
-                <div className="bg-green-500 transition-all" style={{ width: `${completedPct}%` }} title={`Completed: ${completed}`} />
-                <div className="bg-red-400 transition-all" style={{ width: `${cancelledPct}%` }} title={`Cancelled: ${cancelled}`} />
+    <div>
+      <div className="flex items-end gap-3" style={{ height: CHART_H }}>
+        {drivers.map((d) => {
+          const total = Number(d.total_jobs);
+          const completed = Number(d.completed);
+          const cancelled = Number(d.cancelled);
+          const remaining = total - completed - cancelled;
+          const barH = Math.round((total / maxTotal) * CHART_H);
+          const completedH = total > 0 ? Math.round((completed / total) * barH) : 0;
+          const cancelledH = total > 0 ? Math.round((cancelled / total) * barH) : 0;
+          const remainingH = barH - completedH - cancelledH;
+          return (
+            <div key={d.id} className="flex-1 flex flex-col items-center justify-end" style={{ height: CHART_H }}>
+              <span className="text-xs font-semibold text-gray-600 mb-1">{total}</span>
+              <div className="w-full flex flex-col-reverse rounded-t-md overflow-hidden" style={{ height: barH }}>
+                <div style={{ height: completedH }} className="bg-green-500 shrink-0" />
+                <div style={{ height: cancelledH }} className="bg-red-400 shrink-0" />
+                <div style={{ height: remainingH }} className="bg-gray-200 shrink-0" />
               </div>
             </div>
+          );
+        })}
+      </div>
+      <div className="flex gap-3 mt-2 border-t border-gray-100 pt-2">
+        {drivers.map((d) => (
+          <div key={d.id} className="flex-1 text-center text-xs text-gray-500 truncate" title={d.first_name + ' ' + d.last_name}>
+            {d.first_name}
           </div>
-        );
-      })}
-      <div className="flex items-center gap-4 pt-1">
+        ))}
+      </div>
+      <div className="flex items-center gap-4 mt-3">
         <span className="flex items-center gap-1.5 text-xs text-gray-500"><span className="w-3 h-3 rounded-sm bg-green-500 inline-block" />Completed</span>
         <span className="flex items-center gap-1.5 text-xs text-gray-500"><span className="w-3 h-3 rounded-sm bg-red-400 inline-block" />Cancelled</span>
         <span className="flex items-center gap-1.5 text-xs text-gray-500"><span className="w-3 h-3 rounded-sm bg-gray-200 inline-block" />Pending/Active</span>
@@ -53,39 +61,46 @@ function DriverBarChart({ drivers }: { drivers: DriverRow[] }) {
 }
 
 function FleetBarChart({ fleet }: { fleet: VehicleRow[] }) {
-  if (!fleet.length) return <p className="text-sm text-gray-400 text-center py-4">No data</p>;
+  if (!fleet.length) return <p className="text-sm text-gray-400 text-center py-8">No data</p>;
+  const CHART_H = 180;
   const maxJobs = Math.max(...fleet.map((v) => Number(v.total_jobs)), 1);
   const maxDist = Math.max(...fleet.map((v) => Number(v.total_distance_km)), 1);
   return (
-    <div className="space-y-4">
-      {fleet.map((v) => {
-        const jobs = Number(v.total_jobs);
-        const completed = Number(v.completed_jobs);
-        const dist = Number(v.total_distance_km);
-        const jobsPct = (jobs / maxJobs) * 100;
-        const completedPct = jobs > 0 ? (completed / jobs) * 100 : 0;
-        const distPct = (dist / maxDist) * 100;
-        return (
-          <div key={v.id}>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-sm font-medium text-gray-700">{v.registration_number} <span className="text-gray-400 font-normal">{v.make} {v.model}</span></span>
-              <span className="text-xs text-gray-500">{completed}/{jobs} jobs · {dist.toLocaleString()} km</span>
-            </div>
-            <div className="space-y-1">
-              <div className="h-4 bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full flex rounded-full overflow-hidden" style={{ width: `${jobsPct}%`, minWidth: '4px' }}>
-                  <div className="bg-blue-500 transition-all" style={{ width: `${completedPct}%` }} title={`Completed: ${completed}`} />
-                  <div className="bg-blue-200 transition-all flex-1" title={`Other: ${jobs - completed}`} />
+    <div>
+      <div className="flex items-end gap-4" style={{ height: CHART_H }}>
+        {fleet.map((v) => {
+          const jobs = Number(v.total_jobs);
+          const completed = Number(v.completed_jobs);
+          const dist = Number(v.total_distance_km);
+          const jobsBarH = Math.round((jobs / maxJobs) * CHART_H);
+          const completedH = jobs > 0 ? Math.round((completed / jobs) * jobsBarH) : 0;
+          const otherH = jobsBarH - completedH;
+          const distBarH = Math.round((dist / maxDist) * CHART_H);
+          return (
+            <div key={v.id} className="flex-1 flex items-end gap-1" style={{ height: CHART_H }}>
+              <div className="flex-1 flex flex-col items-center justify-end" style={{ height: CHART_H }}>
+                <span className="text-xs font-semibold text-gray-600 mb-1">{jobs}</span>
+                <div className="w-full flex flex-col-reverse rounded-t-md overflow-hidden" style={{ height: jobsBarH }}>
+                  <div style={{ height: completedH }} className="bg-blue-500 shrink-0" />
+                  <div style={{ height: otherH }} className="bg-blue-200 shrink-0" />
                 </div>
               </div>
-              <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full bg-indigo-400 rounded-full transition-all" style={{ width: `${distPct}%`, minWidth: '4px' }} title={`${dist} km`} />
+              <div className="flex-1 flex flex-col items-center justify-end" style={{ height: CHART_H }}>
+                <span className="text-xs font-semibold text-gray-600 mb-1">{dist > 0 ? dist.toLocaleString() : ''}</span>
+                <div className="w-full bg-indigo-400 rounded-t-md" style={{ height: distBarH }} />
               </div>
             </div>
+          );
+        })}
+      </div>
+      <div className="flex gap-4 mt-2 border-t border-gray-100 pt-2">
+        {fleet.map((v) => (
+          <div key={v.id} className="flex-1 text-center text-xs text-gray-500 truncate" title={v.registration_number}>
+            {v.registration_number}
           </div>
-        );
-      })}
-      <div className="flex items-center gap-4 pt-1">
+        ))}
+      </div>
+      <div className="flex items-center gap-4 mt-3">
         <span className="flex items-center gap-1.5 text-xs text-gray-500"><span className="w-3 h-3 rounded-sm bg-blue-500 inline-block" />Completed jobs</span>
         <span className="flex items-center gap-1.5 text-xs text-gray-500"><span className="w-3 h-3 rounded-sm bg-blue-200 inline-block" />Other jobs</span>
         <span className="flex items-center gap-1.5 text-xs text-gray-500"><span className="w-3 h-3 rounded-sm bg-indigo-400 inline-block" />Distance (km)</span>
@@ -129,7 +144,6 @@ export default function AnalyticsPage() {
         <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>
       ) : (
         <div className="space-y-6">
-          {/* Job Overview */}
           {jobStats && (
             <div>
               <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
@@ -153,7 +167,6 @@ export default function AnalyticsPage() {
             </div>
           )}
 
-          {/* Driver Productivity */}
           <div>
             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
               <Users className="w-4 h-4" /> Driver Productivity
@@ -190,7 +203,6 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          {/* Fleet Usage */}
           <div>
             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
               <Truck className="w-4 h-4" /> Fleet Usage
