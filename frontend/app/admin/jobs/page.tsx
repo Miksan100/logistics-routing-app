@@ -4,7 +4,7 @@ import { jobsApi, driversApi, vehiclesApi } from '@/lib/api';
 import type { Job, Driver, Vehicle } from '@/types';
 import StatusBadge from '@/components/shared/StatusBadge';
 import JobModal from '@/components/admin/JobModal';
-import { Plus, Search, MapPin, Calendar, User, Loader2 } from 'lucide-react';
+import { Plus, Search, MapPin, Calendar, User, Pencil, Loader2 } from 'lucide-react';
 
 export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -14,6 +14,7 @@ export default function JobsPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [editingJob, setEditingJob] = useState<Job | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -29,9 +30,24 @@ export default function JobsPage() {
 
   useEffect(() => { load(); }, [statusFilter]);
 
-  const handleSave = async (form: Record<string, unknown>) => {
+  const handleCreate = async (form: Record<string, unknown>) => {
     await jobsApi.create(form);
     load();
+  };
+
+  const handleEdit = async (form: Record<string, unknown>) => {
+    await jobsApi.update(editingJob!.id, form);
+    load();
+  };
+
+  const openEdit = (job: Job) => {
+    setEditingJob(job);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setEditingJob(null);
   };
 
   const filtered = jobs.filter((j) =>
@@ -46,7 +62,7 @@ export default function JobsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Jobs</h1>
           <p className="text-gray-500 text-sm mt-1">{jobs.length} jobs</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2 self-start">
+        <button onClick={() => { setEditingJob(null); setShowModal(true); }} className="btn-primary flex items-center gap-2 self-start">
           <Plus className="w-4 h-4" /> Create Job
         </button>
       </div>
@@ -89,10 +105,19 @@ export default function JobsPage() {
                     </div>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-3 text-xs text-gray-500 sm:text-right sm:flex-col">
-                  <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />{new Date(job.scheduled_date).toLocaleDateString()}</span>
-                  {job.driver_name && <span className="flex items-center gap-1"><User className="w-3.5 h-3.5" />{job.driver_name}</span>}
-                  {job.registration_number && <span className="font-medium text-gray-700">{job.registration_number}</span>}
+                <div className="flex items-start gap-3">
+                  <div className="flex flex-wrap gap-3 text-xs text-gray-500 sm:text-right sm:flex-col">
+                    <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />{new Date(job.scheduled_date).toLocaleDateString()}</span>
+                    {job.driver_name && <span className="flex items-center gap-1"><User className="w-3.5 h-3.5" />{job.driver_name}</span>}
+                    {job.registration_number && <span className="font-medium text-gray-700">{job.registration_number}</span>}
+                  </div>
+                  <button
+                    onClick={() => openEdit(job)}
+                    className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors shrink-0"
+                    title="Edit job"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
               {job.cancellation_reason && (
@@ -107,7 +132,13 @@ export default function JobsPage() {
       )}
 
       {showModal && (
-        <JobModal drivers={drivers} vehicles={vehicles} onClose={() => setShowModal(false)} onSave={handleSave} />
+        <JobModal
+          drivers={drivers}
+          vehicles={vehicles}
+          job={editingJob ?? undefined}
+          onClose={closeModal}
+          onSave={editingJob ? handleEdit : handleCreate}
+        />
       )}
     </div>
   );

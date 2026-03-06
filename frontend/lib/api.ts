@@ -17,7 +17,10 @@ api.interceptors.response.use(
   (err) => {
     if (err.response?.status === 401) {
       clearAuth();
-      if (typeof window !== 'undefined') window.location.href = '/login';
+      // Don't redirect if already on login page (e.g. failed login attempt)
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(err);
   }
