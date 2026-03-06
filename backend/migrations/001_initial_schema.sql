@@ -1,5 +1,7 @@
-﻿-- Logistics SaaS - Initial Database Schema
-CREATE EXTENSION IF NOT EXISTS uuid-ossp;
+-- Logistics SaaS - Initial Database Schema
+-- Multi-tenant: every table (except companies) has company_id
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE IF NOT EXISTS companies (
   id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -20,7 +22,7 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash VARCHAR(255) NOT NULL,
   first_name    VARCHAR(100) NOT NULL,
   last_name     VARCHAR(100) NOT NULL,
-  role          VARCHAR(20) NOT NULL CHECK (role IN (''admin'', ''driver'')),
+  role          VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'driver')),
   is_active     BOOLEAN DEFAULT true,
   last_login    TIMESTAMPTZ,
   created_at    TIMESTAMPTZ DEFAULT NOW(),
@@ -34,7 +36,7 @@ CREATE TABLE IF NOT EXISTS vehicles (
   make                 VARCHAR(100) NOT NULL,
   model                VARCHAR(100) NOT NULL,
   year                 INTEGER NOT NULL,
-  fuel_type            VARCHAR(20) NOT NULL CHECK (fuel_type IN (''petrol'',''diesel'',''electric'',''hybrid'',''lpg'')),
+  fuel_type            VARCHAR(20) NOT NULL CHECK (fuel_type IN ('petrol','diesel','electric','hybrid','lpg')),
   service_interval_km  INTEGER DEFAULT 10000,
   current_odometer     DECIMAL(10,2) DEFAULT 0,
   tracking_device_id   VARCHAR(100),
@@ -78,8 +80,8 @@ CREATE TABLE IF NOT EXISTS jobs (
   planned_route_distance_km   DECIMAL(10,2),
   assigned_driver_id          UUID REFERENCES drivers(id) ON DELETE SET NULL,
   assigned_vehicle_id         UUID REFERENCES vehicles(id) ON DELETE SET NULL,
-  status                      VARCHAR(20) NOT NULL DEFAULT ''pending''
-                                CHECK (status IN (''pending'',''started'',''in_progress'',''completed'',''cancelled'')),
+  status                      VARCHAR(20) NOT NULL DEFAULT 'pending'
+                                CHECK (status IN ('pending','started','in_progress','completed','cancelled')),
   cancellation_reason         TEXT,
   started_at                  TIMESTAMPTZ,
   completed_at                TIMESTAMPTZ,
@@ -139,23 +141,19 @@ CREATE INDEX IF NOT EXISTS idx_job_updates_job_id   ON job_status_updates(job_id
 CREATE INDEX IF NOT EXISTS idx_odometer_driver_date ON odometer_logs(driver_id, log_date);
 CREATE INDEX IF NOT EXISTS idx_gps_vehicle_time     ON gps_tracking(vehicle_id, timestamp);
 
+-- Seed: demo company + admin (password: Admin1234!)
 INSERT INTO companies (id, name, slug, email, phone, address)
 VALUES (
-  ''a0000000-0000-0000-0000-000000000001'',
-  ''Demo Logistics Co.'',
-  ''demo'',
-  ''admin@demo.com'',
-  ''+1 555 000 0000'',
-  ''1 Demo Street, Demo City''
+  'a0000000-0000-0000-0000-000000000001',
+  'Demo Logistics Co.', 'demo', 'admin@demo.com',
+  '+1 555 000 0000', '1 Demo Street, Demo City'
 ) ON CONFLICT DO NOTHING;
 
 INSERT INTO users (id, company_id, email, password_hash, first_name, last_name, role)
 VALUES (
-  ''b0000000-0000-0000-0000-000000000001'',
-  ''a0000000-0000-0000-0000-000000000001'',
-  ''admin@demo.com'',
-  ''$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj6hsxq0t6Se'',
-  ''Admin'',
-  ''User'',
-  ''admin''
+  'b0000000-0000-0000-0000-000000000001',
+  'a0000000-0000-0000-0000-000000000001',
+  'admin@demo.com',
+  '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj6hsxq0t6Se',
+  'Admin', 'User', 'admin'
 ) ON CONFLICT DO NOTHING;
