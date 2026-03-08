@@ -4,6 +4,7 @@ import { driversApi, vehiclesApi } from '@/lib/api';
 import type { Driver, Vehicle } from '@/types';
 import DriverCard from '@/components/admin/DriverCard';
 import DriverModal from '@/components/admin/DriverModal';
+import ResetPasswordModal from '@/components/admin/ResetPasswordModal';
 import { Plus, Search, Loader2 } from 'lucide-react';
 
 export default function DriversPage() {
@@ -13,6 +14,7 @@ export default function DriversPage() {
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Driver | null>(null);
+  const [resetting, setResetting] = useState<Driver | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -68,7 +70,13 @@ export default function DriversPage() {
       ) : (
         <div className="grid gap-4">
           {filtered.map((d) => (
-            <DriverCard key={d.id} driver={d} onEdit={openEdit} onDelete={handleDelete} />
+            <DriverCard
+              key={d.id}
+              driver={d}
+              onEdit={openEdit}
+              onDelete={handleDelete}
+              onResetPassword={setResetting}
+            />
           ))}
           {!filtered.length && (
             <div className="text-center py-16 text-gray-400">
@@ -79,12 +87,11 @@ export default function DriversPage() {
       )}
 
       {showModal && (
-        <DriverModal
-          driver={editing}
-          vehicles={vehicles}
-          onClose={handleClose}
-          onSave={handleSave}
-        />
+        <DriverModal driver={editing} vehicles={vehicles} onClose={handleClose} onSave={handleSave} />
+      )}
+
+      {resetting && (
+        <ResetPasswordModal driver={resetting} onClose={() => setResetting(null)} />
       )}
     </div>
   );

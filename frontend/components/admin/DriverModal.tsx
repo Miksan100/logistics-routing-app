@@ -65,10 +65,13 @@ export default function DriverModal({ driver, vehicles, onClose, onSave }: Props
               {vehicles.map((v) => <option key={v.id} value={v.id}>{v.registration_number} — {v.make} {v.model}</option>)}
             </select>
           </div>
-          <div>
-            <label className="label">{driver ? 'New Password (blank = keep)' : 'Password *'}</label>
-            <input className="input-field" type="password" required={!driver} value={form.password} onChange={(e) => f('password', e.target.value)} />
-          </div>
+          {!driver && (
+            <div>
+              <label className="label">Password *</label>
+              <input className="input-field" type="text" required value={form.password} onChange={(e) => f('password', e.target.value)} placeholder="Set initial login password" />
+              <p className="text-xs text-gray-400 mt-1">This will be the driver's login password. Use the key icon to reset it later.</p>
+            </div>
+          )}
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancel</button>
             <button type="submit" disabled={saving} className="btn-primary flex-1 flex items-center justify-center gap-2">

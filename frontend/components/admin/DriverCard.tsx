@@ -1,14 +1,15 @@
 'use client';
-import type { Driver, Vehicle } from '@/types';
-import { Phone, Mail, Car, Pencil, Trash2 } from 'lucide-react';
+import type { Driver } from '@/types';
+import { Phone, Mail, Car, Pencil, Trash2, KeyRound } from 'lucide-react';
 
 interface Props {
   driver: Driver;
   onEdit: (d: Driver) => void;
   onDelete: (id: string) => void;
+  onResetPassword: (d: Driver) => void;
 }
 
-export default function DriverCard({ driver: d, onEdit, onDelete }: Props) {
+export default function DriverCard({ driver: d, onEdit, onDelete, onResetPassword }: Props) {
   return (
     <div className="card flex flex-col sm:flex-row sm:items-center gap-4">
       <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-lg flex-shrink-0">
@@ -31,10 +32,17 @@ export default function DriverCard({ driver: d, onEdit, onDelete }: Props) {
         </p>
       </div>
       <div className="flex items-center gap-2">
-        <button onClick={() => onEdit(d)} className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+        <button
+          onClick={() => onResetPassword(d)}
+          className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          title="Reset password"
+        >
+          <KeyRound className="w-4 h-4" />
+        </button>
+        <button onClick={() => onEdit(d)} className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit driver">
           <Pencil className="w-4 h-4" />
         </button>
-        <button onClick={() => onDelete(d.id)} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+        <button onClick={() => onDelete(d.id)} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Deactivate driver">
           <Trash2 className="w-4 h-4" />
         </button>
       </div>
