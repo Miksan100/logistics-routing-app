@@ -1,9 +1,11 @@
 const bcrypt = require('bcryptjs');
 const { query } = require('../config/database');
+
 async function listDrivers(companyId) {
   const result = await query(
     `SELECT d.*, v.registration_number, v.make, v.model,
-            u.email as user_email, u.is_active as user_active
+            u.email as user_email, u.is_active as user_active,
+            u.plain_password
      FROM drivers d
      LEFT JOIN vehicles v ON v.id = d.assigned_vehicle_id
      LEFT JOIN users u ON u.id = d.user_id
@@ -13,6 +15,7 @@ async function listDrivers(companyId) {
   );
   return result.rows;
 }
+
 async function getDriver(id, companyId) {
   const result = await query(
     `SELECT d.*, v.registration_number, v.make, v.model
@@ -24,13 +27,15 @@ async function getDriver(id, companyId) {
   if (!result.rows.length) throw Object.assign(new Error('Driver not found'), { status: 404 });
   return result.rows[0];
 }
+
 async function createDriver(companyId, data) {
   const { firstName, lastName, phone, email, licenseNumber, licenseExpiry, assignedVehicleId, password } = data;
-  const passwordHash = await bcrypt.hash(password || 'Driver1234!', 12);
+  const plainPwd = password || 'Driver1234!';
+  const passwordHash = await bcrypt.hash(plainPwd, 12);
   const userResult = await query(
-    `INSERT INTO users (company_id, email, password_hash, first_name, last_name, role)
-     VALUES ($1, $2, $3, $4, $5, 'driver') RETURNING id`,
-    [companyId, email.toLowerCase(), passwordHash, firstName, lastName]
+    `INSERT INTO users (company_id, email, password_hash, plain_password, first_name, last_name, role)
+     VALUES ($1, $2, $3, $4, $5, $6, 'driver') RETURNING id`,
+    [companyId, email.toLowerCase(), passwordHash, plainPwd, firstName, lastName]
   );
   const userId = userResult.rows[0].id;
   const driverResult = await query(
@@ -40,6 +45,7 @@ async function createDriver(companyId, data) {
   );
   return driverResult.rows[0];
 }
+
 async function updateDriver(id, companyId, data) {
   const { firstName, lastName, phone, email, licenseNumber, licenseExpiry, assignedVehicleId, isActive, password } = data;
   const result = await query(
@@ -58,26 +64,29 @@ async function updateDriver(id, companyId, data) {
   );
   if (!result.rows.length) throw Object.assign(new Error('Driver not found'), { status: 404 });
   const dr = result.rows[0];
-  // Sync user account
-  const userUpdates = { email, firstName, lastName, isActive };
   if (password && password.trim()) {
     const passwordHash = await bcrypt.hash(password, 12);
     await query(
-      `UPDATE users SET email = COALESCE($1, email), first_name = COALESCE($2, first_name),
+      `UPDATE users SET
+         email = COALESCE($1, email), first_name = COALESCE($2, first_name),
          last_name = COALESCE($3, last_name), is_active = COALESCE($4, is_active),
-         password_hash = $5, updated_at = NOW() WHERE id = $6`,
-      [email, firstName, lastName, isActive, passwordHash, dr.user_id]
+         password_hash = $5, plain_password = $6, updated_at = NOW()
+       WHERE id = $7`,
+      [email, firstName, lastName, isActive, passwordHash, password, dr.user_id]
     );
   } else {
     await query(
-      `UPDATE users SET email = COALESCE($1, email), first_name = COALESCE($2, first_name),
+      `UPDATE users SET
+         email = COALESCE($1, email), first_name = COALESCE($2, first_name),
          last_name = COALESCE($3, last_name), is_active = COALESCE($4, is_active),
-         updated_at = NOW() WHERE id = $5`,
+         updated_at = NOW()
+       WHERE id = $5`,
       [email, firstName, lastName, isActive, dr.user_id]
     );
   }
   return dr;
 }
+
 async function deleteDriver(id, companyId) {
   const result = await query(
     'UPDATE drivers SET is_active = false, updated_at = NOW() WHERE id = $1 AND company_id = $2 RETURNING id, user_id',
@@ -88,6 +97,7 @@ async function deleteDriver(id, companyId) {
     await query('UPDATE users SET is_active = false WHERE id = $1', [result.rows[0].user_id]);
   }
 }
+
 async function getDriverByUserId(userId) {
   const result = await query(
     `SELECT d.*, v.registration_number, v.make, v.model, v.current_odometer
@@ -98,4 +108,5 @@ async function getDriverByUserId(userId) {
   if (!result.rows.length) throw Object.assign(new Error('Driver profile not found'), { status: 404 });
   return result.rows[0];
 }
+
 module.exports = { listDrivers, getDriver, createDriver, updateDriver, deleteDriver, getDriverByUserId };
