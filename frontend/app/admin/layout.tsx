@@ -46,7 +46,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-5 border-b border-blue-800">
         <Truck className="w-8 h-8 text-blue-300" />
-        <span className="text-xl font-bold">LogiTrack</span>
+        <span className="text-xl font-bold">Fleeterzen</span>
       </div>
 
       {/* Nav */}
@@ -120,7 +120,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </button>
           <div className="flex items-center gap-2">
             <Truck className="w-6 h-6 text-blue-600" />
-            <span className="font-bold text-gray-900">LogiTrack</span>
+            <span className="font-bold text-gray-900">Fleeterzen</span>
           </div>
         </header>
         <main className="flex-1 overflow-y-auto">

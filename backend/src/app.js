@@ -11,6 +11,7 @@ const jobRoutes = require('./routes/jobs');
 const odometerRoutes = require('./routes/odometer');
 const trackingRoutes = require('./routes/tracking');
 const analyticsRoutes = require('./routes/analytics');
+const vendorRoutes = require('./routes/vendor');
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use('/api/jobs', jobRoutes);
 app.use('/api/odometer', odometerRoutes);
 app.use('/api/tracking', trackingRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/vendor', vendorRoutes);
 
 app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
 

@@ -1,5 +1,5 @@
 {
-  "name": "logistics-backend",
+  "name": "fleeterzen-backend",
   "version": "1.0.0",
   "description": "Logistics SaaS API",
   "main": "src/app.js",

@@ -2,16 +2,16 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { authApi } from '@/lib/api';
-import { setAuth, getUser } from '@/lib/auth';
-import { Truck, Eye, EyeOff, Loader2 } from 'lucide-react';
+import vendorApi from '@/lib/vendorApi';
+import { setVendorAuth, getVendorUser } from '@/lib/vendorAuth';
+import { Zap, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 const LiquidCrystalBackground = dynamic(
   () => import('@/components/ui/liquid-crystal-shader'),
   { ssr: false }
 );
 
-export default function LoginPage() {
+export default function VendorLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,10 +20,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const user = getUser();
-    if (user) {
-      router.replace(user.role === 'admin' ? '/admin/dashboard' : '/driver/dashboard');
-    }
+    if (getVendorUser()) router.replace('/vendor/dashboard');
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,9 +28,9 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const { token, user } = await authApi.login(email, password);
-      setAuth(token, user);
-      router.push(user.role === 'admin' ? '/admin/dashboard' : '/driver/dashboard');
+      const { data } = await vendorApi.post('/auth/login', { email, password });
+      setVendorAuth(data.token, data.vendor);
+      router.push('/vendor/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Login failed. Please try again.');
     } finally {
@@ -43,36 +40,28 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-screen bg-blue-950 flex items-center justify-center p-4 overflow-hidden">
-      {/* Animated background */}
       <LiquidCrystalBackground
-        speed={0.5}
-        radii={[0.25, 0.18, 0.28]}
-        smoothK={[0.22, 0.28]}
-        className="opacity-90"
+        speed={0.4}
+        radii={[0.22, 0.20, 0.26]}
+        smoothK={[0.20, 0.25]}
+        className="opacity-80"
       />
+      <div className="absolute inset-0 bg-blue-950/50" />
 
-      {/* Dark overlay to deepen the background and improve card contrast */}
-      <div className="absolute inset-0 bg-blue-950/40" />
-
-      {/* Login content */}
       <div className="relative z-10 w-full max-w-md">
-        {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-lg mb-4">
-            <Truck className="w-9 h-9 text-blue-600" />
+            <Zap className="w-9 h-9 text-yellow-500" />
           </div>
           <h1 className="text-3xl font-bold text-white">Fleeterzen</h1>
-          <p className="text-blue-200 mt-1">Fleet Management Platform</p>
+          <p className="text-blue-200 mt-1">Vendor Portal</p>
         </div>
 
-        {/* Card */}
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Sign in to your account</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">Sign in to vendor account</h2>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-              {error}
-            </div>
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -83,12 +72,11 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="input-field"
-                placeholder="you@company.com"
+                placeholder="vendor@fleeterzen.com"
                 required
                 autoComplete="email"
               />
             </div>
-
             <div>
               <label className="label">Password</label>
               <div className="relative">
@@ -110,7 +98,6 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
-
             <button
               type="submit"
               disabled={loading}
@@ -120,10 +107,6 @@ export default function LoginPage() {
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
           </form>
-
-          <p className="mt-6 text-center text-xs text-gray-400">
-            Demo admin: admin@demo.com / Admin1234!
-          </p>
         </div>
       </div>
     </div>

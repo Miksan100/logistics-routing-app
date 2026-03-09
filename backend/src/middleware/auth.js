@@ -9,11 +9,18 @@ async function authenticate(req, res, next) {
     const token = header.slice(7);
     const payload = jwt.verify(token, process.env.JWT_SECRET);
     const result = await query(
-      'SELECT id, company_id, email, first_name, last_name, role, is_active FROM users WHERE id = $1',
+      `SELECT u.id, u.company_id, u.email, u.first_name, u.last_name, u.role, u.is_active,
+              c.is_active AS company_active
+       FROM users u
+       JOIN companies c ON c.id = u.company_id
+       WHERE u.id = $1`,
       [payload.userId]
     );
     if (!result.rows.length || !result.rows[0].is_active) {
       return res.status(401).json({ error: 'User not found or inactive' });
+    }
+    if (!result.rows[0].company_active) {
+      return res.status(403).json({ error: 'Account suspended. Please contact support.' });
     }
     req.user = result.rows[0];
     next();

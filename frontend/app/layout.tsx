@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'LogiTrack - Logistics Management',
+  title: 'Fleeterzen - Fleet Management',
   description: 'Production-ready logistics management platform',
   viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
 };
