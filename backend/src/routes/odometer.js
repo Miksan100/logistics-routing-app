@@ -13,6 +13,10 @@ router.post('/start-day', requireRole('driver'), async (req, res, next) => {
     if (startOdometer === undefined || startOdometer === null) {
       return res.status(400).json({ error: 'Start odometer reading is required' });
     }
+    const startVal = parseFloat(startOdometer);
+    if (isNaN(startVal) || startVal < 0) {
+      return res.status(400).json({ error: 'Start odometer must be a positive number' });
+    }
     const driver = await driverSvc.getDriverByUserId(req.user.id);
     const vehicleId = driver.assigned_vehicle_id || req.body.vehicleId;
     if (!vehicleId) {
@@ -29,6 +33,10 @@ router.post('/end-day', requireRole('driver'), async (req, res, next) => {
     const { endOdometer } = req.body;
     if (endOdometer === undefined || endOdometer === null) {
       return res.status(400).json({ error: 'End odometer reading is required' });
+    }
+    const endVal = parseFloat(endOdometer);
+    if (isNaN(endVal) || endVal < 0) {
+      return res.status(400).json({ error: 'End odometer must be a positive number' });
     }
     const driver = await driverSvc.getDriverByUserId(req.user.id);
     const vehicleId = driver.assigned_vehicle_id || req.body.vehicleId;

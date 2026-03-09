@@ -12,6 +12,10 @@ router.post('/gps', async (req, res, next) => {
     if (!vehicle_id || latitude === undefined || longitude === undefined || !timestamp) {
       return res.status(400).json({ error: 'vehicle_id, latitude, longitude and timestamp are required' });
     }
+    const lat = parseFloat(latitude), lng = parseFloat(longitude);
+    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      return res.status(400).json({ error: 'Invalid latitude or longitude values' });
+    }
     const record = await svc.recordGPS(req.body);
     res.status(201).json(record);
   } catch (err) { next(err); }
@@ -39,8 +43,12 @@ router.get('/history/:vehicleId', authenticate, requireRole('admin'), async (req
 router.post('/job/:jobId/track', authenticate, requireRole('driver'), async (req, res, next) => {
   try {
     const { latitude, longitude, accuracy } = req.body;
-    if (latitude === undefined || longitude === undefined) {
+    const lat = parseFloat(latitude), lng = parseFloat(longitude);
+    if (latitude === undefined || longitude === undefined || isNaN(lat) || isNaN(lng)) {
       return res.status(400).json({ error: 'latitude and longitude are required' });
+    }
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      return res.status(400).json({ error: 'Invalid latitude or longitude range' });
     }
     const driver = await driverSvc.getDriverByUserId(req.user.id);
     await svc.recordJobGPS(req.user.company_id, req.params.jobId, driver.id, latitude, longitude, accuracy);
