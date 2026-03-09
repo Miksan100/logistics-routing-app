@@ -17,13 +17,10 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
   const [vendor, setVendor] = useState<VendorUser | null>(null);
 
   useEffect(() => {
-    if (pathname === '/vendor/login') return;
     const v = getVendorUser();
-    if (!v) { router.replace('/vendor/login'); return; }
+    if (!v) { router.replace('/login'); return; }
     setVendor(v);
   }, [router, pathname]);
-
-  if (pathname === '/vendor/login') return <>{children}</>;
   if (!vendor) return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
@@ -75,7 +72,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
             </div>
           </div>
           <button
-            onClick={() => { clearVendorAuth(); router.push('/vendor/login'); }}
+            onClick={() => { clearVendorAuth(); router.push('/login'); }}
             className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-blue-200 hover:bg-blue-800 hover:text-white transition-colors"
           >
             <LogOut className="w-4 h-4" />

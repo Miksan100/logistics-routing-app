@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { authApi } from '@/lib/api';
 import { setAuth, getUser } from '@/lib/auth';
+import { setVendorAuth } from '@/lib/vendorAuth';
 import { Truck, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 const LiquidCrystalBackground = dynamic(
@@ -32,8 +33,13 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const { token, user } = await authApi.login(email, password);
-      setAuth(token, user);
-      router.push(user.role === 'admin' ? '/admin/dashboard' : '/driver/dashboard');
+      if (user.role === 'vendor') {
+        setVendorAuth(token, user);
+        router.push('/vendor/dashboard');
+      } else {
+        setAuth(token, user);
+        router.push(user.role === 'admin' ? '/admin/dashboard' : '/driver/dashboard');
+      }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Login failed. Please try again.');
     } finally {

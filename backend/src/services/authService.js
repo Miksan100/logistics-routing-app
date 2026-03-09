@@ -7,7 +7,34 @@ async function login(email, password) {
     [email.toLowerCase()]
   );
   if (!result.rows.length) {
-    throw Object.assign(new Error('Invalid credentials'), { status: 401 });
+    // Fall through to vendor_users
+    const vResult = await query(
+      'SELECT id, email, password_hash, first_name, last_name, is_active FROM vendor_users WHERE email = $1',
+      [email.toLowerCase()]
+    );
+    if (!vResult.rows.length) {
+      throw Object.assign(new Error('Invalid credentials'), { status: 401 });
+    }
+    const vendor = vResult.rows[0];
+    if (!vendor.is_active) throw Object.assign(new Error('Account is disabled'), { status: 403 });
+    const valid = await bcrypt.compare(password, vendor.password_hash);
+    if (!valid) throw Object.assign(new Error('Invalid credentials'), { status: 401 });
+    await query('UPDATE vendor_users SET last_login = NOW() WHERE id = $1', [vendor.id]);
+    const token = jwt.sign(
+      { vendorUserId: vendor.id, role: 'vendor' },
+      process.env.VENDOR_JWT_SECRET,
+      { expiresIn: process.env.VENDOR_JWT_EXPIRES_IN || '8h' }
+    );
+    return {
+      token,
+      user: {
+        id: vendor.id,
+        email: vendor.email,
+        firstName: vendor.first_name,
+        lastName: vendor.last_name,
+        role: 'vendor',
+      },
+    };
   }
   const user = result.rows[0];
   if (!user.is_active) {
