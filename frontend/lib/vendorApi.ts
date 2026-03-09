@@ -1,8 +1,10 @@
 import axios from 'axios';
 import { getVendorToken } from './vendorAuth';
 
+const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+
 const vendorApi = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/vendor',
+  baseURL: `${BASE}/vendor`,
 });
 
 vendorApi.interceptors.request.use((config) => {
