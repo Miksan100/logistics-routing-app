@@ -1,9 +1,15 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { authApi } from '@/lib/api';
 import { setAuth, getUser } from '@/lib/auth';
 import { Truck, Eye, EyeOff, Loader2 } from 'lucide-react';
+
+const LiquidCrystalBackground = dynamic(
+  () => import('@/components/ui/liquid-crystal-shader'),
+  { ssr: false }
+);
 
 export default function LoginPage() {
   const router = useRouter();
@@ -36,8 +42,20 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-600 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="relative min-h-screen bg-blue-950 flex items-center justify-center p-4 overflow-hidden">
+      {/* Animated background */}
+      <LiquidCrystalBackground
+        speed={0.5}
+        radii={[0.25, 0.18, 0.28]}
+        smoothK={[0.22, 0.28]}
+        className="opacity-90"
+      />
+
+      {/* Dark overlay to deepen the background and improve card contrast */}
+      <div className="absolute inset-0 bg-blue-950/40" />
+
+      {/* Login content */}
+      <div className="relative z-10 w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-lg mb-4">
@@ -48,7 +66,7 @@ export default function LoginPage() {
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
+        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-6">Sign in to your account</h2>
 
           {error && (
