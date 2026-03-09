@@ -8,7 +8,6 @@ import { Home, LogOut, Truck, Menu, X } from 'lucide-react';
 
 const nav = [
   { href: '/driver/dashboard', label: 'My Jobs', icon: Home },
-  { href: '/driver/odometer',  label: 'Odometer', icon: Truck },
 ];
 
 export default function DriverLayout({ children }: { children: React.ReactNode }) {
