@@ -149,7 +149,7 @@ async function getTodayJobsForDriver(driverId, companyId) {
     `SELECT j.*, v.registration_number, v.make, v.model
      FROM jobs j
      LEFT JOIN vehicles v ON v.id = j.assigned_vehicle_id
-     WHERE j.assigned_driver_id = $1 AND j.company_id = $2 AND j.scheduled_date = CURRENT_DATE
+     WHERE j.assigned_driver_id = $1 AND j.company_id = $2 AND j.status NOT IN ('completed', 'cancelled')
      ORDER BY j.created_at ASC`,
     [driverId, companyId]
   );

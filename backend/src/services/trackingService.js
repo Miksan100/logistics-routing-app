@@ -42,4 +42,43 @@ async function getVehicleHistory(vehicleId, companyId, from, to) {
   return result.rows;
 }
 
-module.exports = { recordGPS, getLatestPositions, getVehicleHistory };
+
+async function recordJobGPS(companyId, jobId, driverId, latitude, longitude, accuracy) {
+  await query(
+    `INSERT INTO job_gps_tracks (company_id, job_id, driver_id, latitude, longitude, accuracy)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [companyId, jobId, driverId, latitude, longitude, accuracy || null]
+  );
+}
+
+async function getJobRoute(jobId, companyId) {
+  const result = await query(
+    `SELECT latitude, longitude, accuracy, timestamp
+     FROM job_gps_tracks
+     WHERE job_id = $1 AND company_id = $2
+     ORDER BY timestamp ASC`,
+    [jobId, companyId]
+  );
+  return result.rows;
+}
+
+async function getJobsWithRoutes(companyId) {
+  const result = await query(
+    `SELECT j.id, j.title, j.pickup_address, j.delivery_address, j.scheduled_date,
+            j.status, j.started_at, j.completed_at,
+            d.first_name || ' ' || d.last_name AS driver_name,
+            v.registration_number, v.make, v.model,
+            COUNT(t.id) AS gps_point_count
+     FROM jobs j
+     LEFT JOIN drivers d ON d.id = j.assigned_driver_id
+     LEFT JOIN vehicles v ON v.id = j.assigned_vehicle_id
+     LEFT JOIN job_gps_tracks t ON t.job_id = j.id
+     WHERE j.company_id = $1 AND j.status IN ('completed', 'cancelled', 'in_progress', 'started')
+     GROUP BY j.id, d.first_name, d.last_name, v.registration_number, v.make, v.model
+     ORDER BY j.scheduled_date DESC, j.created_at DESC`,
+    [companyId]
+  );
+  return result.rows;
+}
+
+module.exports = { recordGPS, getLatestPositions, getVehicleHistory, recordJobGPS, getJobRoute, getJobsWithRoutes };

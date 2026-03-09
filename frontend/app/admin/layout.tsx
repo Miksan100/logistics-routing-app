@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { getUser, clearAuth } from '@/lib/auth';
 import type { User } from '@/types';
 import {
-  LayoutDashboard, Users, Truck, Briefcase, BarChart3,
+  LayoutDashboard, Users, Truck, Briefcase, BarChart3, History,
   LogOut, Menu, X, ChevronRight
 } from 'lucide-react';
 
@@ -15,6 +15,7 @@ const nav = [
   { href: '/admin/fleet',     label: 'Fleet',     icon: Truck },
   { href: '/admin/jobs',      label: 'Jobs',      icon: Briefcase },
   { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+  { href: '/admin/job-history', label: 'Job History', icon: History },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

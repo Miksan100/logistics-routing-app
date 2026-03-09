@@ -1,12 +1,12 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { jobsApi } from '@/lib/api';
+import { jobsApi, odometerApi, trackingApi } from '@/lib/api';
 import type { Job } from '@/types';
 import StatusBadge from '@/components/shared/StatusBadge';
 import {
   MapPin, Clock, Truck, ArrowLeft, Loader2, AlertCircle,
-  Play, Zap, CheckCircle2, XCircle
+  Play, Zap, CheckCircle2, XCircle, Gauge
 } from 'lucide-react';
 
 export default function JobDetailPage() {
@@ -18,6 +18,30 @@ export default function JobDetailPage() {
   const [cancelReason, setCancelReason] = useState('');
   const [showCancelForm, setShowCancelForm] = useState(false);
   const [error, setError] = useState('');
+  const watchIdRef = useRef<number | null>(null);
+
+  // Stop GPS tracking on unmount
+  useEffect(() => () => { if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current); }, []);
+
+  const startGPSTracking = (jobId: string) => {
+    if (!navigator.geolocation) return;
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (pos) => {
+        trackingApi.recordJobGPS(jobId, pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy).catch(() => {});
+      },
+      () => {},
+      { enableHighAccuracy: true, maximumAge: 30000, timeout: 15000 }
+    );
+  };
+
+  const stopGPSTracking = () => {
+    if (watchIdRef.current !== null) { navigator.geolocation.clearWatch(watchIdRef.current); watchIdRef.current = null; }
+  };
+
+  const [showStartOdo, setShowStartOdo] = useState(false);
+  const [startOdo, setStartOdo] = useState('');
+  const [showEndOdo, setShowEndOdo] = useState(false);
+  const [endOdo, setEndOdo] = useState('');
 
   const load = async () => {
     try { setJob(await jobsApi.get(id)); }
@@ -131,18 +155,51 @@ export default function JobDetailPage() {
       {/* Action buttons */}
       {!isDone && (
         <div className="space-y-3">
-          {canStart && (
+          {canStart && !showStartOdo && (
             <button
-              onClick={() => doAction(() => jobsApi.start(job.id))}
+              onClick={() => setShowStartOdo(true)}
               disabled={actionLoading}
               className="btn-primary w-full py-4 text-base flex items-center justify-center gap-2 rounded-xl"
             >
-              {actionLoading
-                ? <Loader2 className="w-5 h-5 animate-spin" />
-                : <Play className="w-5 h-5" />
-              }
+              <Play className="w-5 h-5" />
               Start Job
             </button>
+          )}
+
+          {canStart && showStartOdo && (
+            <div className="card border border-blue-200 bg-blue-50 space-y-3">
+              <div className="flex items-center gap-2">
+                <Gauge className="w-5 h-5 text-blue-600" />
+                <p className="font-semibold text-gray-900">Enter Start Odometer Reading</p>
+              </div>
+              <input
+                type="number"
+                className="input-field bg-white"
+                placeholder="e.g. 45320"
+                value={startOdo}
+                onChange={(e) => setStartOdo(e.target.value)}
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <button onClick={() => { setShowStartOdo(false); setStartOdo(''); }} className="btn-secondary flex-1">Back</button>
+                <button
+                  onClick={() => startOdo && doAction(async () => {
+                    await odometerApi.startDay(parseFloat(startOdo), job.assigned_vehicle_id ?? undefined);
+                    await jobsApi.start(job.id);
+                    setShowStartOdo(false); setStartOdo('');
+                    startGPSTracking(job.id);
+                    const pickup = job.pickup_lat && job.pickup_lng ? `${job.pickup_lat},${job.pickup_lng}` : encodeURIComponent(job.pickup_address);
+                    const delivery = job.delivery_lat && job.delivery_lng ? `${job.delivery_lat},${job.delivery_lng}` : encodeURIComponent(job.delivery_address);
+                    window.open(`https://www.google.com/maps/dir/?api=1&origin=${pickup}&destination=${delivery}`, '_blank');
+                  })}
+                  disabled={!startOdo || actionLoading}
+                  className="btn-primary flex-1 flex items-center justify-center gap-2"
+                >
+                  {actionLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Confirm Start
+                </button>
+              </div>
+            </div>
           )}
 
           {canProgress && (
@@ -159,18 +216,43 @@ export default function JobDetailPage() {
             </button>
           )}
 
-          {canComplete && (
+          {canComplete && !showEndOdo && (
             <button
-              onClick={() => doAction(() => jobsApi.complete(job.id))}
+              onClick={() => setShowEndOdo(true)}
               disabled={actionLoading}
               className="btn-success w-full py-4 text-base flex items-center justify-center gap-2 rounded-xl"
             >
-              {actionLoading
-                ? <Loader2 className="w-5 h-5 animate-spin" />
-                : <CheckCircle2 className="w-5 h-5" />
-              }
+              <CheckCircle2 className="w-5 h-5" />
               Complete Job
             </button>
+          )}
+
+          {canComplete && showEndOdo && (
+            <div className="card border border-green-200 bg-green-50 space-y-3">
+              <div className="flex items-center gap-2">
+                <Gauge className="w-5 h-5 text-green-600" />
+                <p className="font-semibold text-gray-900">Enter End Odometer Reading</p>
+              </div>
+              <input
+                type="number"
+                className="input-field bg-white"
+                placeholder="e.g. 45580"
+                value={endOdo}
+                onChange={(e) => setEndOdo(e.target.value)}
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <button onClick={() => { setShowEndOdo(false); setEndOdo(''); }} className="btn-secondary flex-1">Back</button>
+                <button
+                  onClick={() => endOdo && doAction(async () => { await odometerApi.endDay(parseFloat(endOdo), job.assigned_vehicle_id ?? undefined); await jobsApi.complete(job.id); setShowEndOdo(false); setEndOdo(''); stopGPSTracking(); })}
+                  disabled={!endOdo || actionLoading}
+                  className="btn-success flex-1 flex items-center justify-center gap-2"
+                >
+                  {actionLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Confirm Complete
+                </button>
+              </div>
+            </div>
           )}
 
           {canCancel && !showCancelForm && (

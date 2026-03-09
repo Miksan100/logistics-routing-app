@@ -4,7 +4,7 @@ import { jobsApi, driversApi, vehiclesApi } from '@/lib/api';
 import type { Job, Driver, Vehicle } from '@/types';
 import StatusBadge from '@/components/shared/StatusBadge';
 import JobModal from '@/components/admin/JobModal';
-import { Plus, Search, MapPin, Calendar, User, Pencil, Loader2 } from 'lucide-react';
+import { Plus, Search, MapPin, Calendar, User, Pencil, Copy, Loader2 } from 'lucide-react';
 
 export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -15,6 +15,7 @@ export default function JobsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
+  const [copyingJob, setCopyingJob] = useState<Job | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -45,9 +46,16 @@ export default function JobsPage() {
     setShowModal(true);
   };
 
+  const openCopy = (job: Job) => {
+    setCopyingJob(job);
+    setEditingJob(null);
+    setShowModal(true);
+  };
+
   const closeModal = () => {
     setShowModal(false);
     setEditingJob(null);
+    setCopyingJob(null);
   };
 
   const filtered = jobs.filter((j) =>
@@ -112,6 +120,13 @@ export default function JobsPage() {
                     {job.registration_number && <span className="font-medium text-gray-700">{job.registration_number}</span>}
                   </div>
                   <button
+                    onClick={() => openCopy(job)}
+                    className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-blue-500 transition-colors shrink-0"
+                    title="Copy job"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
+                  <button
                     onClick={() => openEdit(job)}
                     className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors shrink-0"
                     title="Edit job"
@@ -135,7 +150,8 @@ export default function JobsPage() {
         <JobModal
           drivers={drivers}
           vehicles={vehicles}
-          job={editingJob ?? undefined}
+          job={copyingJob ?? editingJob ?? undefined}
+          isCopy={!!copyingJob}
           onClose={closeModal}
           onSave={editingJob ? handleEdit : handleCreate}
         />

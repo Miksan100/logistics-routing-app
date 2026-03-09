@@ -7,14 +7,15 @@ interface Props {
   drivers: Driver[];
   vehicles: Vehicle[];
   job?: Job;
+  isCopy?: boolean;
   onClose: () => void;
   onSave: (form: Record<string, unknown>) => Promise<void>;
 }
 
-export default function JobModal({ drivers, vehicles, job, onClose, onSave }: Props) {
+export default function JobModal({ drivers, vehicles, job, isCopy, onClose, onSave }: Props) {
   const today = new Date().toISOString().split('T')[0];
   const [form, setForm] = useState({
-    title: job?.title ?? '',
+    title: isCopy ? `Copy of ${job?.title ?? ''}` : (job?.title ?? ''),
     description: job?.description ?? '',
     pickupAddress: job?.pickup_address ?? '',
     pickupLat: job?.pickup_lat?.toString() ?? '',
@@ -22,7 +23,7 @@ export default function JobModal({ drivers, vehicles, job, onClose, onSave }: Pr
     deliveryAddress: job?.delivery_address ?? '',
     deliveryLat: job?.delivery_lat?.toString() ?? '',
     deliveryLng: job?.delivery_lng?.toString() ?? '',
-    scheduledDate: job?.scheduled_date ? job.scheduled_date.split('T')[0] : today,
+    scheduledDate: isCopy ? today : (job?.scheduled_date ? job.scheduled_date.split('T')[0] : today),
     estimatedDurationMinutes: job?.estimated_duration_minutes?.toString() ?? '',
     plannedRouteDistanceKm: job?.planned_route_distance_km?.toString() ?? '',
     assignedDriverId: job?.assigned_driver_id ?? '',
@@ -32,7 +33,7 @@ export default function JobModal({ drivers, vehicles, job, onClose, onSave }: Pr
   const [error, setError] = useState('');
   const upd = (k: string, val: string) => setForm((p) => ({ ...p, [k]: val }));
 
-  const isEdit = !!job;
+  const isEdit = !!job && !isCopy;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true); setError('');
@@ -57,7 +58,7 @@ export default function JobModal({ drivers, vehicles, job, onClose, onSave }: Pr
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50">
       <div className="bg-white w-full sm:max-w-2xl rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-5 border-b sticky top-0 bg-white">
-          <h2 className="text-lg font-semibold">{isEdit ? 'Edit Job' : 'Create Job'}</h2>
+          <h2 className="text-lg font-semibold">{isEdit ? 'Edit Job' : isCopy ? 'Copy Job' : 'Create Job'}</h2>
           <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5" /></button>
         </div>
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
@@ -105,7 +106,7 @@ export default function JobModal({ drivers, vehicles, job, onClose, onSave }: Pr
             <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancel</button>
             <button type="submit" disabled={saving} className="btn-primary flex-1 flex items-center justify-center gap-2">
               {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-              {isEdit ? 'Save Changes' : 'Create Job'}
+              {isEdit ? 'Save Changes' : isCopy ? 'Create Copy' : 'Create Job'}
             </button>
           </div>
         </form>

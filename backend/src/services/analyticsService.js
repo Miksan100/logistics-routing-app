@@ -2,17 +2,31 @@ const { query } = require('../config/database');
 
 async function getDashboardStats(companyId, date) {
   const targetDate = date || new Date().toISOString().split('T')[0];
+
+  // Job stats across ALL time (not just today)
   const jobStats = await query(
+    `SELECT
+       COUNT(*) AS total,
+       COUNT(*) FILTER (WHERE status = 'completed') AS completed,
+       COUNT(*) FILTER (WHERE status = 'in_progress') AS in_progress,
+       COUNT(*) FILTER (WHERE status = 'cancelled') AS cancelled,
+       COUNT(*) FILTER (WHERE status = 'pending') AS pending,
+       COUNT(*) FILTER (WHERE status = 'started') AS started,
+       COUNT(*) FILTER (WHERE status IN ('pending','started','in_progress')) AS active
+     FROM jobs WHERE company_id = $1`,
+    [companyId]
+  );
+
+  // Also get today-specific counts
+  const todayStats = await query(
     `SELECT
        COUNT(*) FILTER (WHERE scheduled_date = $2) AS total_today,
        COUNT(*) FILTER (WHERE scheduled_date = $2 AND status = 'completed') AS completed_today,
-       COUNT(*) FILTER (WHERE scheduled_date = $2 AND status = 'in_progress') AS in_progress_today,
-       COUNT(*) FILTER (WHERE scheduled_date = $2 AND status = 'cancelled') AS cancelled_today,
-       COUNT(*) FILTER (WHERE scheduled_date = $2 AND status = 'pending') AS pending_today,
-       COUNT(*) FILTER (WHERE scheduled_date = $2 AND status = 'started') AS started_today
+       COUNT(*) FILTER (WHERE scheduled_date = $2 AND status IN ('started','in_progress')) AS active_today
      FROM jobs WHERE company_id = $1`,
     [companyId, targetDate]
   );
+
   const driverStats = await query(
     `SELECT COUNT(DISTINCT d.id) AS total_drivers,
             COUNT(DISTINCT d.id) FILTER (WHERE j.scheduled_date = $2 AND j.status IN ('started','in_progress')) AS active_drivers
@@ -20,6 +34,7 @@ async function getDashboardStats(companyId, date) {
      WHERE d.company_id = $1 AND d.is_active = true`,
     [companyId, targetDate]
   );
+
   const vehicleStats = await query(
     `SELECT COUNT(DISTINCT v.id) AS total_vehicles,
             COUNT(DISTINCT j.assigned_vehicle_id) FILTER (WHERE j.scheduled_date = $2 AND j.status IN ('started','in_progress')) AS active_vehicles
@@ -27,7 +42,13 @@ async function getDashboardStats(companyId, date) {
      WHERE v.company_id = $1 AND v.is_active = true`,
     [companyId, targetDate]
   );
-  return { date: targetDate, jobs: jobStats.rows[0], drivers: driverStats.rows[0], vehicles: vehicleStats.rows[0] };
+
+  return {
+    date: targetDate,
+    jobs: { ...jobStats.rows[0], ...todayStats.rows[0] },
+    drivers: driverStats.rows[0],
+    vehicles: vehicleStats.rows[0],
+  };
 }
 
 async function getDriverProductivity(companyId, dateFrom, dateTo) {

@@ -1,6 +1,7 @@
 const express = require('express');
 const { authenticate, requireRole } = require('../middleware/auth');
 const svc = require('../services/trackingService');
+const driverSvc = require('../services/driverService');
 
 const router = express.Router();
 
@@ -30,6 +31,36 @@ router.get('/history/:vehicleId', authenticate, requireRole('admin'), async (req
     const { from, to } = req.query;
     const history = await svc.getVehicleHistory(req.params.vehicleId, req.user.company_id, from, to);
     res.json(history);
+  } catch (err) { next(err); }
+});
+
+
+// Driver: record a GPS point for a specific job
+router.post('/job/:jobId/track', authenticate, requireRole('driver'), async (req, res, next) => {
+  try {
+    const { latitude, longitude, accuracy } = req.body;
+    if (latitude === undefined || longitude === undefined) {
+      return res.status(400).json({ error: 'latitude and longitude are required' });
+    }
+    const driver = await driverSvc.getDriverByUserId(req.user.id);
+    await svc.recordJobGPS(req.user.company_id, req.params.jobId, driver.id, latitude, longitude, accuracy);
+    res.status(201).json({ ok: true });
+  } catch (err) { next(err); }
+});
+
+// Admin: get GPS route for a specific job
+router.get('/job/:jobId/route', authenticate, requireRole('admin'), async (req, res, next) => {
+  try {
+    const route = await svc.getJobRoute(req.params.jobId, req.user.company_id);
+    res.json(route);
+  } catch (err) { next(err); }
+});
+
+// Admin: list all jobs that have tracking data (job history)
+router.get('/jobs', authenticate, requireRole('admin'), async (req, res, next) => {
+  try {
+    const jobs = await svc.getJobsWithRoutes(req.user.company_id);
+    res.json(jobs);
   } catch (err) { next(err); }
 });
 

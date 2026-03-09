@@ -70,8 +70,8 @@ export const jobsApi = {
 
 // Odometer
 export const odometerApi = {
-  startDay: (startOdometer: number) => api.post('/odometer/start-day', { startOdometer }).then((r) => r.data),
-  endDay: (endOdometer: number) => api.post('/odometer/end-day', { endOdometer }).then((r) => r.data),
+  startDay: (startOdometer: number, vehicleId?: string) => api.post('/odometer/start-day', { startOdometer, vehicleId }).then((r) => r.data),
+  endDay: (endOdometer: number, vehicleId?: string) => api.post('/odometer/end-day', { endOdometer, vehicleId }).then((r) => r.data),
   today: () => api.get('/odometer/today').then((r) => r.data),
   list: (params?: Record<string, string>) => api.get('/odometer', { params }).then((r) => r.data),
 };
@@ -92,4 +92,8 @@ export const trackingApi = {
   positions: () => api.get('/tracking/positions').then((r) => r.data),
   history: (vehicleId: string, from?: string, to?: string) =>
     api.get(`/tracking/history/${vehicleId}`, { params: { from, to } }).then((r) => r.data),
+  recordJobGPS: (jobId: string, latitude: number, longitude: number, accuracy?: number) =>
+    api.post(`/tracking/job/${jobId}/track`, { latitude, longitude, accuracy }).then((r) => r.data),
+  jobRoute: (jobId: string) => api.get(`/tracking/job/${jobId}/route`).then((r) => r.data),
+  jobHistory: () => api.get('/tracking/jobs').then((r) => r.data),
 };

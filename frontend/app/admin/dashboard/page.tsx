@@ -2,9 +2,7 @@
 import { useEffect, useState } from 'react';
 import { analyticsApi } from '@/lib/api';
 import type { DashboardStats } from '@/types';
-import {
-  Briefcase, CheckCircle, Clock, XCircle, Users, Truck, AlertCircle, Loader2
-} from 'lucide-react';
+import { Briefcase, CheckCircle, Clock, XCircle, Users, Truck, AlertCircle, Loader2, Activity } from 'lucide-react';
 
 interface StatCardProps {
   title: string;
@@ -28,7 +26,7 @@ function StatCard({ title, value, icon, color, subtitle }: StatCardProps) {
 }
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -61,52 +59,31 @@ export default function AdminDashboard() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-gray-500 mt-1">{today}</p>
       </div>
 
-      {/* Job Stats */}
+      {/* All-time job stats */}
       <div className="mb-6">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Today's Jobs</h2>
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">All Jobs</h2>
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          <StatCard
-            title="Total Jobs"
-            value={j?.total_today || 0}
-            icon={<Briefcase className="w-5 h-5 text-blue-600" />}
-            color="bg-blue-50"
-          />
-          <StatCard
-            title="Completed"
-            value={j?.completed_today || 0}
-            icon={<CheckCircle className="w-5 h-5 text-green-600" />}
-            color="bg-green-50"
-          />
-          <StatCard
-            title="In Progress"
-            value={j?.in_progress_today || 0}
-            icon={<Clock className="w-5 h-5 text-yellow-600" />}
-            color="bg-yellow-50"
-          />
-          <StatCard
-            title="Started"
-            value={j?.started_today || 0}
-            icon={<Truck className="w-5 h-5 text-indigo-600" />}
-            color="bg-indigo-50"
-          />
-          <StatCard
-            title="Pending"
-            value={j?.pending_today || 0}
-            icon={<AlertCircle className="w-5 h-5 text-gray-500" />}
-            color="bg-gray-100"
-          />
-          <StatCard
-            title="Cancelled"
-            value={j?.cancelled_today || 0}
-            icon={<XCircle className="w-5 h-5 text-red-600" />}
-            color="bg-red-50"
-          />
+          <StatCard title="Total" value={j?.total || 0} icon={<Briefcase className="w-5 h-5 text-blue-600" />} color="bg-blue-50" />
+          <StatCard title="Active" value={j?.active || 0} icon={<Activity className="w-5 h-5 text-indigo-600" />} color="bg-indigo-50" subtitle="pending + in progress" />
+          <StatCard title="Completed" value={j?.completed || 0} icon={<CheckCircle className="w-5 h-5 text-green-600" />} color="bg-green-50" />
+          <StatCard title="In Progress" value={j?.in_progress || 0} icon={<Clock className="w-5 h-5 text-yellow-600" />} color="bg-yellow-50" />
+          <StatCard title="Pending" value={j?.pending || 0} icon={<AlertCircle className="w-5 h-5 text-gray-500" />} color="bg-gray-100" />
+          <StatCard title="Cancelled" value={j?.cancelled || 0} icon={<XCircle className="w-5 h-5 text-red-600" />} color="bg-red-50" />
+        </div>
+      </div>
+
+      {/* Today's summary */}
+      <div className="mb-6">
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Today's Summary</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <StatCard title="Scheduled Today" value={j?.total_today || 0} icon={<Briefcase className="w-5 h-5 text-blue-600" />} color="bg-blue-50" />
+          <StatCard title="Completed Today" value={j?.completed_today || 0} icon={<CheckCircle className="w-5 h-5 text-green-600" />} color="bg-green-50" />
+          <StatCard title="Active Today" value={j?.active_today || 0} icon={<Activity className="w-5 h-5 text-yellow-600" />} color="bg-yellow-50" />
         </div>
       </div>
 
@@ -120,7 +97,7 @@ export default function AdminDashboard() {
           <div className="flex justify-between">
             <div>
               <p className="text-3xl font-bold text-gray-900">{d?.active_drivers || 0}</p>
-              <p className="text-sm text-gray-500">Active now</p>
+              <p className="text-sm text-gray-500">Active today</p>
             </div>
             <div className="text-right">
               <p className="text-3xl font-bold text-gray-400">{d?.total_drivers || 0}</p>
@@ -128,10 +105,8 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="mt-3 bg-gray-100 rounded-full h-2">
-            <div
-              className="bg-blue-600 h-2 rounded-full transition-all"
-              style={{ width: d?.total_drivers ? `${(Number(d.active_drivers) / Number(d.total_drivers)) * 100}%` : '0%' }}
-            />
+            <div className="bg-blue-600 h-2 rounded-full transition-all"
+              style={{ width: d?.total_drivers ? `${(Number(d.active_drivers) / Number(d.total_drivers)) * 100}%` : '0%' }} />
           </div>
         </div>
 
@@ -143,7 +118,7 @@ export default function AdminDashboard() {
           <div className="flex justify-between">
             <div>
               <p className="text-3xl font-bold text-gray-900">{v?.active_vehicles || 0}</p>
-              <p className="text-sm text-gray-500">In use</p>
+              <p className="text-sm text-gray-500">In use today</p>
             </div>
             <div className="text-right">
               <p className="text-3xl font-bold text-gray-400">{v?.total_vehicles || 0}</p>
@@ -151,18 +126,15 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="mt-3 bg-gray-100 rounded-full h-2">
-            <div
-              className="bg-green-600 h-2 rounded-full transition-all"
-              style={{ width: v?.total_vehicles ? `${(Number(v.active_vehicles) / Number(v.total_vehicles)) * 100}%` : '0%' }}
-            />
+            <div className="bg-green-600 h-2 rounded-full transition-all"
+              style={{ width: v?.total_vehicles ? `${(Number(v.active_vehicles) / Number(v.total_vehicles)) * 100}%` : '0%' }} />
           </div>
         </div>
       </div>
 
-      {/* Completion Rate */}
-      {j && Number(j.total_today) > 0 && (
+      {Number(j?.total_today) > 0 && (
         <div className="card">
-          <h3 className="font-semibold text-gray-900 mb-4">Today's Completion Rate</h3>
+          <h3 className="font-semibold text-gray-900 mb-4">Overall Completion Rate for Today</h3>
           <div className="flex items-center gap-4">
             <div className="flex-1 bg-gray-100 rounded-full h-4">
               <div
@@ -174,9 +146,7 @@ export default function AdminDashboard() {
                 </span>
               </div>
             </div>
-            <span className="text-sm font-medium text-gray-600">
-              {j.completed_today}/{j.total_today} jobs
-            </span>
+            <span className="text-sm font-medium text-gray-600">{j.completed_today}/{j.total_today} jobs</span>
           </div>
         </div>
       )}

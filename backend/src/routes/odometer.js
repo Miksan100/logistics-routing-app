@@ -14,10 +14,11 @@ router.post('/start-day', requireRole('driver'), async (req, res, next) => {
       return res.status(400).json({ error: 'Start odometer reading is required' });
     }
     const driver = await driverSvc.getDriverByUserId(req.user.id);
-    if (!driver.assigned_vehicle_id) {
+    const vehicleId = driver.assigned_vehicle_id || req.body.vehicleId;
+    if (!vehicleId) {
       return res.status(400).json({ error: 'No vehicle assigned to this driver' });
     }
-    const log = await svc.startDay(driver.id, driver.assigned_vehicle_id, req.user.company_id, parseFloat(startOdometer));
+    const log = await svc.startDay(driver.id, vehicleId, req.user.company_id, parseFloat(startOdometer));
     res.json(log);
   } catch (err) { next(err); }
 });
@@ -30,10 +31,11 @@ router.post('/end-day', requireRole('driver'), async (req, res, next) => {
       return res.status(400).json({ error: 'End odometer reading is required' });
     }
     const driver = await driverSvc.getDriverByUserId(req.user.id);
-    if (!driver.assigned_vehicle_id) {
+    const vehicleId = driver.assigned_vehicle_id || req.body.vehicleId;
+    if (!vehicleId) {
       return res.status(400).json({ error: 'No vehicle assigned to this driver' });
     }
-    const log = await svc.endDay(driver.id, driver.assigned_vehicle_id, req.user.company_id, parseFloat(endOdometer));
+    const log = await svc.endDay(driver.id, vehicleId, req.user.company_id, parseFloat(endOdometer));
     res.json(log);
   } catch (err) { next(err); }
 });
