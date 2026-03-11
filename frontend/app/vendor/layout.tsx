@@ -4,7 +4,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { getVendorUser, clearVendorAuth } from '@/lib/vendorAuth';
 import type { VendorUser } from '@/lib/vendorAuth';
-import { LayoutDashboard, Building2, LogOut, Zap } from 'lucide-react';
+import { LayoutDashboard, Building2, LogOut, Truck } from 'lucide-react';
 
 const nav = [
   { href: '/vendor/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -33,7 +33,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
       <aside className="flex flex-col w-64 flex-shrink-0 bg-blue-900 text-white shadow-xl">
         {/* Logo */}
         <div className="flex items-center gap-3 px-6 py-5 border-b border-blue-800">
-          <Zap className="w-8 h-8 text-yellow-400" />
+          <Truck className="w-8 h-8 text-white" />
           <div>
             <span className="text-xl font-bold block">Fleeterzen</span>
             <span className="text-xs text-blue-300">Vendor Portal</span>
