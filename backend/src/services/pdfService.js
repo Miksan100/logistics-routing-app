@@ -1,4 +1,5 @@
 const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
+const { encryptPdf } = require('./pdfEncrypt');
 
 async function generateWelcomePdf({ companyName, adminFirstName, adminLastName, adminEmail, adminPassword, loginUrl, idNumber }) {
   const pdfDoc = await PDFDocument.create();
@@ -45,18 +46,11 @@ async function generateWelcomePdf({ companyName, adminFirstName, adminLastName, 
   page.drawText('© Fleeterzen  •  Confidential', { x: 30, y: 25, font: regular, size: 8, color: rgb(0.7, 0.7, 0.7) });
   page.drawText(`Generated for ${adminEmail}`, { x: width - 200, y: 25, font: regular, size: 8, color: rgb(0.7, 0.7, 0.7) });
 
-  // Encrypt with ID number as user password
-  const pdfBytes = await pdfDoc.save({
-    userPassword: idNumber,
-    ownerPassword: idNumber + '_owner',
-    permissions: {
-      printing: 'highResolution',
-      copying: false,
-      modifying: false,
-    },
-  });
+  // Save without object streams so the encryptor can parse it
+  const pdfBytes = await pdfDoc.save({ useObjectStreams: false });
 
-  return Buffer.from(pdfBytes);
+  // Apply PDF Standard Security Handler (40-bit RC4, pure JS)
+  return encryptPdf(Buffer.from(pdfBytes), idNumber, idNumber + '_owner');
 }
 
 module.exports = { generateWelcomePdf };
