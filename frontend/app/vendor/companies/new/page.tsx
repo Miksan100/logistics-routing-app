@@ -29,6 +29,7 @@ export default function NewCompanyPage() {
     adminPassword: '',
     billingEmail: '',
     planId: '',
+    adminIdNumber: '',
   });
 
   useEffect(() => {
@@ -159,6 +160,10 @@ export default function NewCompanyPage() {
             <div className="col-span-2">
               <label className="label">Password</label>
               <input type="text" value={form.adminPassword} onChange={set('adminPassword')} className="input-field" required minLength={8} placeholder="Min. 8 characters" />
+            </div>
+            <div className="col-span-2">
+              <label className="label">ID Number / Passport Number</label>
+              <input type="text" value={form.adminIdNumber} onChange={set('adminIdNumber')} className="input-field" required placeholder="Used to protect the credentials PDF" />
             </div>
           </div>
         </div>

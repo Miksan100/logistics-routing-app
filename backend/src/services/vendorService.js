@@ -1,6 +1,8 @@
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const { query, getClient } = require('../config/database');
+const { generateWelcomePdf } = require('./pdfService');
+const { sendWelcomeEmail }    = require('./emailService');
 
 async function listCompanies(filters = {}) {
   const conditions = [];
@@ -66,7 +68,7 @@ async function getCompanyDetail(companyId) {
 }
 
 async function createCompany(data) {
-  const { companyName, adminFirstName, adminLastName, adminEmail, adminPassword, billingEmail, planId } = data;
+  const { companyName, adminFirstName, adminLastName, adminEmail, adminPassword, billingEmail, planId, adminIdNumber } = data;
   const client = await getClient();
   try {
     await client.query('BEGIN');
@@ -79,11 +81,20 @@ async function createCompany(data) {
     const passwordHash = await bcrypt.hash(adminPassword, 12);
     const userId = uuidv4();
     await client.query(
-      `INSERT INTO users (id, company_id, email, password_hash, plain_password, first_name, last_name, role, is_active)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'admin', true)`,
-      [userId, companyId, adminEmail.toLowerCase().trim(), passwordHash, adminPassword, adminFirstName, adminLastName]
+      `INSERT INTO users (id, company_id, email, password_hash, plain_password, first_name, last_name, role, is_active, id_number)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'admin', true, $8)`,
+      [userId, companyId, adminEmail.toLowerCase().trim(), passwordHash, adminPassword, adminFirstName, adminLastName, adminIdNumber || null]
     );
     await client.query('COMMIT');
+
+    // Send welcome email with PDF (non-blocking — don't fail company creation if email fails)
+    if (adminIdNumber) {
+      const loginUrl = process.env.APP_URL || 'http://localhost:3000/login';
+      generateWelcomePdf({ companyName, adminFirstName, adminLastName, adminEmail, adminPassword, loginUrl, idNumber: adminIdNumber })
+        .then(pdfBuffer => sendWelcomeEmail({ adminEmail, adminFirstName, companyName, loginUrl, pdfBuffer }))
+        .catch(err => console.error('[welcome-email] Failed:', err.message));
+    }
+
     return { companyId, userId, companyName, adminEmail, adminPassword };
   } catch (err) {
     await client.query('ROLLBACK');

@@ -73,8 +73,8 @@ router.get('/companies', authenticateVendor, async (req, res, next) => {
 
 router.post('/companies', authenticateVendor, async (req, res, next) => {
   try {
-    const { companyName, adminFirstName, adminLastName, adminEmail, adminPassword, billingEmail, planId } = req.body;
-    if (!companyName || !adminFirstName || !adminLastName || !adminEmail || !adminPassword) {
+    const { companyName, adminFirstName, adminLastName, adminEmail, adminPassword, billingEmail, planId, adminIdNumber } = req.body;
+    if (!companyName || !adminFirstName || !adminLastName || !adminEmail || !adminPassword || !adminIdNumber) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
     const result = await vendorService.createCompany(req.body);
