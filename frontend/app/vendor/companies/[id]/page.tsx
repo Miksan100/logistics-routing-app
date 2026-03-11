@@ -147,7 +147,7 @@ export default function CompanyDetailPage() {
               >
                 <option value="">— No plan —</option>
                 {plans.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name} (${p.price_monthly}/mo)</option>
+                  <option key={p.id} value={p.id}>{p.name} (R{p.price_monthly}/mo)</option>
                 ))}
               </select>
             </div>

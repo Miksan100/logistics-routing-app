@@ -81,7 +81,7 @@ export default function VendorDashboard() {
           <StatCard label="Suspended" value={stats.suspended_companies} icon={AlertCircle} color="bg-red-100 text-red-600" />
           <StatCard label="Total Drivers" value={stats.total_drivers} icon={Users} color="bg-purple-100 text-purple-600" />
           <StatCard label="Jobs This Month" value={stats.jobs_this_month} icon={Briefcase} color="bg-indigo-100 text-indigo-600" />
-          <StatCard label="MRR" value={`$${Number(stats.mrr).toLocaleString()}`} icon={TrendingUp} color="bg-emerald-100 text-emerald-600" />
+          <StatCard label="MRR" value={`R${Number(stats.mrr).toLocaleString()}`} icon={TrendingUp} color="bg-emerald-100 text-emerald-600" />
         </div>
       )}
 
