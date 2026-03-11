@@ -29,6 +29,7 @@ export default function NewCompanyPage() {
     adminPassword: '',
     billingEmail: '',
     planId: '',
+    planStatus: 'trial',
     adminIdNumber: '',
   });
 
@@ -131,10 +132,19 @@ export default function NewCompanyPage() {
             <div>
               <label className="label">Plan</label>
               <select value={form.planId} onChange={set('planId')} className="input-field">
-                <option value="">— Trial (no plan) —</option>
+                <option value="">— No plan —</option>
                 {plans.map((p) => (
                   <option key={p.id} value={p.id}>{p.name} (R{p.price_monthly}/mo)</option>
                 ))}
+              </select>
+            </div>
+            <div>
+              <label className="label">Plan Status</label>
+              <select value={form.planStatus} onChange={set('planStatus')} className="input-field">
+                <option value="trial">Trial</option>
+                <option value="active">Active</option>
+                <option value="suspended">Suspended</option>
+                <option value="cancelled">Cancelled</option>
               </select>
             </div>
           </div>

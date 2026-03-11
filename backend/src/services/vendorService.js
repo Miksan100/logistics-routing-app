@@ -68,7 +68,7 @@ async function getCompanyDetail(companyId) {
 }
 
 async function createCompany(data) {
-  const { companyName, adminFirstName, adminLastName, adminEmail, adminPassword, billingEmail, planId, adminIdNumber } = data;
+  const { companyName, adminFirstName, adminLastName, adminEmail, adminPassword, billingEmail, planId, planStatus, adminIdNumber } = data;
   const client = await getClient();
   try {
     await client.query('BEGIN');
@@ -77,8 +77,8 @@ async function createCompany(data) {
     const companyEmail = billingEmail || adminEmail;
     await client.query(
       `INSERT INTO companies (id, name, slug, email, billing_email, plan_id, plan_status, is_active)
-       VALUES ($1, $2, $3, $4, $5, $6, 'trial', true)`,
-      [companyId, companyName, slug, companyEmail, companyEmail, planId || null]
+       VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
+      [companyId, companyName, slug, companyEmail, companyEmail, planId || null, planStatus || 'trial']
     );
     const passwordHash = await bcrypt.hash(adminPassword, 12);
     const userId = uuidv4();
