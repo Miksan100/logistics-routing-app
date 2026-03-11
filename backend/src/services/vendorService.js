@@ -93,7 +93,7 @@ async function createCompany(data) {
     if (adminIdNumber) {
       const loginUrl = process.env.APP_URL || 'http://localhost:3000/login';
       generateWelcomePdf({ companyName, adminFirstName, adminLastName, adminEmail, adminPassword, loginUrl, idNumber: adminIdNumber })
-        .then(pdfBuffer => sendWelcomeEmail({ adminEmail, adminFirstName, companyName, loginUrl, pdfBuffer }))
+        .then(pdfBuffer => sendWelcomeEmail({ adminEmail, adminFirstName, adminLastName, companyName, loginUrl, pdfBuffer }))
         .catch(err => console.error('[welcome-email] Failed:', err.message));
     }
 
@@ -164,6 +164,43 @@ async function listPlans() {
   return result.rows;
 }
 
+async function addCompanyAdmin(companyId, data) {
+  const { adminFirstName, adminLastName, adminEmail, adminPassword, adminIdNumber } = data;
+
+  // Check admin count
+  const countRes = await query(
+    `SELECT COUNT(*) AS cnt FROM users WHERE company_id = $1 AND role = 'admin'`,
+    [companyId]
+  );
+  if (parseInt(countRes.rows[0].cnt) >= 10) {
+    throw Object.assign(new Error('Maximum of 10 admins per company'), { status: 400 });
+  }
+
+  // Get company info for email
+  const companyRes = await query('SELECT name FROM companies WHERE id = $1', [companyId]);
+  if (!companyRes.rows.length) throw Object.assign(new Error('Company not found'), { status: 404 });
+  const companyName = companyRes.rows[0].name;
+
+  const passwordHash = await bcrypt.hash(adminPassword, 12);
+  const userId = uuidv4();
+
+  await query(
+    `INSERT INTO users (id, company_id, email, password_hash, plain_password, first_name, last_name, role, is_active, id_number)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, 'admin', true, $8)`,
+    [userId, companyId, adminEmail.toLowerCase().trim(), passwordHash, adminPassword, adminFirstName, adminLastName, adminIdNumber || null]
+  );
+
+  // Send welcome email (non-blocking)
+  if (adminIdNumber) {
+    const loginUrl = process.env.APP_URL || 'http://localhost:3000/login';
+    generateWelcomePdf({ companyName, adminFirstName, adminLastName, adminEmail, adminPassword, loginUrl, idNumber: adminIdNumber })
+      .then(pdfBuffer => sendWelcomeEmail({ adminEmail, adminFirstName, adminLastName, companyName, loginUrl, pdfBuffer }))
+      .catch(err => console.error('[add-admin-email] Failed:', err.message));
+  }
+
+  return { userId, adminEmail };
+}
+
 module.exports = {
   listCompanies,
   getCompanyDetail,
@@ -173,4 +210,5 @@ module.exports = {
   updateCompanyNotes,
   getPlatformStats,
   listPlans,
+  addCompanyAdmin,
 };

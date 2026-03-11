@@ -131,4 +131,29 @@ router.patch('/companies/:id/notes', authenticateVendor, async (req, res, next) 
   }
 });
 
+router.post('/companies/:id/admins', authenticateVendor, async (req, res, next) => {
+  try {
+    const { adminFirstName, adminLastName, adminEmail, adminPassword, adminIdNumber } = req.body;
+    if (!adminFirstName || !adminLastName || !adminEmail || !adminPassword || !adminIdNumber) {
+      return res.status(400).json({ error: 'All admin fields are required' });
+    }
+    const result = await vendorService.addCompanyAdmin(req.params.id, req.body);
+    res.status(201).json(result);
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message });
+    if (err.code === '23505') return res.status(409).json({ error: 'Email already exists' });
+    next(err);
+  }
+});
+
+router.get('/email-history', authenticateVendor, async (req, res, next) => {
+  try {
+    const result = await require('../config/database').query(
+      `SELECT id, to_email, to_name, subject, company_name, email_type, status, error_message, sent_at
+       FROM email_logs ORDER BY sent_at DESC LIMIT 200`
+    );
+    res.json(result.rows);
+  } catch (err) { next(err); }
+});
+
 module.exports = router;

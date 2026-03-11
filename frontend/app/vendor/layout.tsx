@@ -4,11 +4,12 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { getVendorUser, clearVendorAuth } from '@/lib/vendorAuth';
 import type { VendorUser } from '@/lib/vendorAuth';
-import { LayoutDashboard, Building2, LogOut, Truck } from 'lucide-react';
+import { LayoutDashboard, Building2, LogOut, Truck, Mail } from 'lucide-react';
 
 const nav = [
-  { href: '/vendor/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/vendor/companies', label: 'Companies',  icon: Building2 },
+  { href: '/vendor/dashboard',     label: 'Dashboard',     icon: LayoutDashboard },
+  { href: '/vendor/companies',     label: 'Companies',     icon: Building2 },
+  { href: '/vendor/email-history', label: 'Email History', icon: Mail },
 ];
 
 export default function VendorLayout({ children }: { children: React.ReactNode }) {
