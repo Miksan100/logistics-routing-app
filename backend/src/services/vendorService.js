@@ -53,7 +53,7 @@ async function getCompanyDetail(companyId) {
          COUNT(*) FILTER (WHERE TRUE) AS total_jobs,
          COUNT(*) FILTER (WHERE status = 'completed') AS completed_jobs,
          COUNT(*) FILTER (WHERE created_at >= date_trunc('month', NOW())) AS jobs_this_month,
-         COUNT(DISTINCT driver_id) AS active_drivers,
+         COUNT(DISTINCT assigned_driver_id) AS active_drivers,
          MAX(updated_at) AS last_activity
        FROM jobs WHERE company_id = $1`,
       [companyId]
