@@ -46,7 +46,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-5 border-b border-blue-800">
         <Truck className="w-8 h-8 text-blue-300" />
-        <span className="text-xl font-bold">Fleeterzen</span>
+        <div>
+          <span className="text-xl font-bold block">Fleeterzen</span>
+          <span className="text-xs text-blue-300">Admin Portal</span>
+        </div>
       </div>
 
       {/* Nav */}

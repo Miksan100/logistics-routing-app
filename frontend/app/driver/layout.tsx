@@ -34,7 +34,10 @@ export default function DriverLayout({ children }: { children: React.ReactNode }
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
             <Truck className="w-6 h-6 text-blue-300" />
-            <span className="font-bold text-lg">Fleeterzen</span>
+            <div>
+              <span className="font-bold text-lg leading-none block">Fleeterzen</span>
+              <span className="text-xs text-blue-300">Driver Portal</span>
+            </div>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center text-sm font-semibold">
