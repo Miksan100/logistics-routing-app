@@ -37,6 +37,7 @@ export default function DriverLayout({ children }: { children: React.ReactNode }
             <div>
               <span className="font-bold text-lg leading-none block">Fleeterzen</span>
               <span className="text-xs text-blue-300">Driver Portal</span>
+              <span className="text-xs text-white/80 block mt-0.5">{user.firstName} {user.lastName} · {user.companyName}</span>
             </div>
           </div>
           <div className="flex items-center gap-1">

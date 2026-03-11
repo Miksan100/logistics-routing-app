@@ -3,7 +3,10 @@ const jwt = require('jsonwebtoken');
 const { query } = require('../config/database');
 async function login(email, password) {
   const result = await query(
-    'SELECT id, company_id, email, password_hash, first_name, last_name, role, is_active FROM users WHERE email = $1',
+    `SELECT u.id, u.company_id, u.email, u.password_hash, u.first_name, u.last_name, u.role, u.is_active,
+            c.name AS company_name
+     FROM users u JOIN companies c ON c.id = u.company_id
+     WHERE u.email = $1`,
     [email.toLowerCase()]
   );
   if (!result.rows.length) {
@@ -64,6 +67,7 @@ async function login(email, password) {
     user: {
       id: user.id,
       companyId: user.company_id,
+      companyName: user.company_name,
       email: user.email,
       firstName: user.first_name,
       lastName: user.last_name,

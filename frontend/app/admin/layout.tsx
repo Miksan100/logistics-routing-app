@@ -51,6 +51,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <span className="text-xs text-blue-300">Admin Portal</span>
         </div>
       </div>
+      <div className="px-6 py-3 border-b border-blue-800 bg-blue-950/30">
+        <p className="text-sm font-medium text-white truncate">{user.firstName} {user.lastName}</p>
+        <p className="text-xs text-blue-300 truncate mt-0.5">{user.companyName}</p>
+      </div>
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1">
