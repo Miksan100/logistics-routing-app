@@ -29,6 +29,7 @@ export default function CompanyDetailPage() {
   const [selectedPlan, setSelectedPlan] = useState('');
   const [planStatus, setPlanStatus] = useState('trial');
   const [msg, setMsg] = useState('');
+  const [fetchError, setFetchError] = useState('');
 
   useEffect(() => {
     Promise.all([
@@ -40,6 +41,8 @@ export default function CompanyDetailPage() {
       setNotes(d.data.company.notes || '');
       setSelectedPlan(d.data.company.plan_id || '');
       setPlanStatus(d.data.company.plan_status || 'trial');
+    }).catch((err: any) => {
+      setFetchError(err.response?.data?.error || err.message || 'Failed to load company');
     }).finally(() => setLoading(false));
   }, [id]);
 
@@ -78,6 +81,11 @@ export default function CompanyDetailPage() {
   if (loading) return (
     <div className="flex items-center justify-center h-64">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+    </div>
+  );
+  if (fetchError) return (
+    <div className="p-6 max-w-xl mx-auto">
+      <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{fetchError}</div>
     </div>
   );
   if (!detail) return null;

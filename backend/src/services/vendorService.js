@@ -73,10 +73,12 @@ async function createCompany(data) {
   try {
     await client.query('BEGIN');
     const companyId = uuidv4();
+    const slug = companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + companyId.slice(0, 6);
+    const companyEmail = billingEmail || adminEmail;
     await client.query(
-      `INSERT INTO companies (id, name, billing_email, plan_id, plan_status, is_active)
-       VALUES ($1, $2, $3, $4, 'trial', true)`,
-      [companyId, companyName, billingEmail || adminEmail, planId || null]
+      `INSERT INTO companies (id, name, slug, email, billing_email, plan_id, plan_status, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6, 'trial', true)`,
+      [companyId, companyName, slug, companyEmail, companyEmail, planId || null]
     );
     const passwordHash = await bcrypt.hash(adminPassword, 12);
     const userId = uuidv4();
