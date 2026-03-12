@@ -30,6 +30,8 @@ export default function CompanyDetailPage() {
   const [planStatus, setPlanStatus] = useState('trial');
   const [msg, setMsg] = useState('');
   const [fetchError, setFetchError] = useState('');
+  const [billingType, setBillingType] = useState('monthly');
+  const [billingAmount, setBillingAmount] = useState('');
   const [showAddAdmin, setShowAddAdmin] = useState(false);
   const [adminForm, setAdminForm] = useState({ adminFirstName: '', adminLastName: '', adminEmail: '', adminPassword: '', adminIdNumber: '' });
   const [addingAdmin, setAddingAdmin] = useState(false);
@@ -45,6 +47,8 @@ export default function CompanyDetailPage() {
       setNotes(d.data.company.notes || '');
       setSelectedPlan(d.data.company.plan_id || '');
       setPlanStatus(d.data.company.plan_status || 'trial');
+      setBillingType(d.data.company.billing_type || 'monthly');
+      setBillingAmount(d.data.company.billing_amount ?? '');
     }).catch((err: any) => {
       setFetchError(err.response?.data?.error || err.message || 'Failed to load company');
     }).finally(() => setLoading(false));
@@ -67,6 +71,17 @@ export default function CompanyDetailPage() {
     try {
       await vendorApi.patch(`/companies/${id}/plan`, { planId: selectedPlan, planStatus });
       setMsg('Plan updated');
+    } finally {
+      setSaving(false);
+      setTimeout(() => setMsg(''), 3000);
+    }
+  };
+
+  const saveBilling = async () => {
+    setSaving(true);
+    try {
+      await vendorApi.patch(`/companies/${id}/billing`, { billingType, billingAmount: billingAmount !== '' ? billingAmount : null });
+      setMsg('Billing info saved');
     } finally {
       setSaving(false);
       setTimeout(() => setMsg(''), 3000);
@@ -225,6 +240,40 @@ export default function CompanyDetailPage() {
             Save Notes
           </button>
         </div>
+      </div>
+
+      {/* Billing */}
+      <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+        <h2 className="font-semibold text-gray-900 mb-4">Billing</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="label">Billing Type</label>
+            <select value={billingType} onChange={(e) => setBillingType(e.target.value)} className="input-field">
+              <option value="monthly">Monthly</option>
+              <option value="once_off">Once-off</option>
+            </select>
+          </div>
+          <div>
+            <label className="label">Billing Amount (R)</label>
+            <input
+              type="number"
+              value={billingAmount}
+              onChange={(e) => setBillingAmount(e.target.value)}
+              className="input-field"
+              min="0"
+              step="0.01"
+              placeholder="0.00"
+            />
+          </div>
+        </div>
+        <button
+          onClick={saveBilling}
+          disabled={saving}
+          className="mt-4 btn-primary flex items-center gap-2 px-4 py-2 text-sm"
+        >
+          <Save className="w-4 h-4" />
+          Save Billing
+        </button>
       </div>
 
       {/* Users */}

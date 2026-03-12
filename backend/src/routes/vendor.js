@@ -120,6 +120,20 @@ router.patch('/companies/:id/plan', authenticateVendor, async (req, res, next) =
   }
 });
 
+router.patch('/companies/:id/billing', authenticateVendor, async (req, res, next) => {
+  try {
+    const { billingType, billingAmount } = req.body;
+    if (!billingType || !['monthly', 'once_off'].includes(billingType)) {
+      return res.status(400).json({ error: 'billingType must be monthly or once_off' });
+    }
+    await vendorService.updateCompanyBilling(req.params.id, billingType, billingAmount ?? null);
+    res.json({ message: 'Billing updated' });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message });
+    next(err);
+  }
+});
+
 router.patch('/companies/:id/notes', authenticateVendor, async (req, res, next) => {
   try {
     const { notes } = req.body;

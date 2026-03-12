@@ -68,7 +68,7 @@ async function getCompanyDetail(companyId) {
 }
 
 async function createCompany(data) {
-  const { companyName, adminFirstName, adminLastName, adminEmail, adminPassword, billingEmail, planId, planStatus, adminIdNumber } = data;
+  const { companyName, adminFirstName, adminLastName, adminEmail, adminPassword, billingEmail, planId, planStatus, adminIdNumber, billingType, billingAmount } = data;
   const client = await getClient();
   try {
     await client.query('BEGIN');
@@ -76,9 +76,9 @@ async function createCompany(data) {
     const slug = companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + companyId.slice(0, 6);
     const companyEmail = billingEmail || adminEmail;
     await client.query(
-      `INSERT INTO companies (id, name, slug, email, billing_email, plan_id, plan_status, is_active)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
-      [companyId, companyName, slug, companyEmail, companyEmail, planId || null, planStatus || 'trial']
+      `INSERT INTO companies (id, name, slug, email, billing_email, plan_id, plan_status, billing_type, billing_amount, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true)`,
+      [companyId, companyName, slug, companyEmail, companyEmail, planId || null, planStatus || 'trial', billingType || 'monthly', billingAmount || null]
     );
     const passwordHash = await bcrypt.hash(adminPassword, 12);
     const userId = uuidv4();
@@ -118,6 +118,14 @@ async function setCompanyPlan(companyId, planId, planStatus) {
   const result = await query(
     'UPDATE companies SET plan_id = $1, plan_status = $2, updated_at = NOW() WHERE id = $3 RETURNING id',
     [planId, planStatus, companyId]
+  );
+  if (!result.rows.length) throw { status: 404, message: 'Company not found' };
+}
+
+async function updateCompanyBilling(companyId, billingType, billingAmount) {
+  const result = await query(
+    'UPDATE companies SET billing_type = $1, billing_amount = $2, updated_at = NOW() WHERE id = $3 RETURNING id',
+    [billingType, billingAmount, companyId]
   );
   if (!result.rows.length) throw { status: 404, message: 'Company not found' };
 }
@@ -207,6 +215,7 @@ module.exports = {
   createCompany,
   setCompanyStatus,
   setCompanyPlan,
+  updateCompanyBilling,
   updateCompanyNotes,
   getPlatformStats,
   listPlans,

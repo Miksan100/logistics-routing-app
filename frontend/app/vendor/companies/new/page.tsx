@@ -31,6 +31,8 @@ export default function NewCompanyPage() {
     planId: '',
     planStatus: 'trial',
     adminIdNumber: '',
+    billingType: 'monthly',
+    billingAmount: '',
   });
 
   useEffect(() => {
@@ -146,6 +148,17 @@ export default function NewCompanyPage() {
                 <option value="suspended">Suspended</option>
                 <option value="cancelled">Cancelled</option>
               </select>
+            </div>
+            <div>
+              <label className="label">Billing Type</label>
+              <select value={form.billingType} onChange={set('billingType')} className="input-field">
+                <option value="monthly">Monthly</option>
+                <option value="once_off">Once-off</option>
+              </select>
+            </div>
+            <div>
+              <label className="label">Billing Amount (R)</label>
+              <input type="number" value={form.billingAmount} onChange={set('billingAmount')} className="input-field" min="0" step="0.01" placeholder="0.00" />
             </div>
           </div>
         </div>
