@@ -113,12 +113,16 @@ export default function CompanyDetailPage() {
   };
 
   const enterAdminPortal = async () => {
+    // Open the window synchronously (before await) to avoid popup blockers
+    const newTab = window.open('', '_blank');
+    if (!newTab) return;
     setImpersonating(true);
     try {
       const { data } = await vendorApi.post(`/companies/${id}/impersonate`);
       const userEncoded = btoa(JSON.stringify(data.user));
-      window.open(`/impersonate?token=${encodeURIComponent(data.token)}&user=${encodeURIComponent(userEncoded)}`, '_blank');
+      newTab.location.href = `/impersonate?token=${encodeURIComponent(data.token)}&user=${encodeURIComponent(userEncoded)}`;
     } catch (err: any) {
+      newTab.close();
       setMsg(err.response?.data?.error || 'Failed to access admin portal');
       setTimeout(() => setMsg(''), 4000);
     } finally {
