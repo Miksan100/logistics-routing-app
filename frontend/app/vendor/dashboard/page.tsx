@@ -91,7 +91,32 @@ export default function VendorDashboard() {
           <h2 className="font-semibold text-gray-900">Recent Companies</h2>
           <Link href="/vendor/companies" className="text-sm text-blue-600 hover:underline">View all</Link>
         </div>
-        <div className="overflow-x-auto">
+
+        {companies.length === 0 && (
+          <p className="text-center text-gray-400 py-8">No companies yet</p>
+        )}
+
+        {/* Mobile cards */}
+        <div className="md:hidden divide-y divide-gray-100">
+          {companies.map((c) => (
+            <Link key={c.id} href={`/vendor/companies/${c.id}`} className="block px-5 py-4 hover:bg-gray-50">
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-medium text-gray-900">{c.name}</span>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${statusColors[c.plan_status] || 'bg-gray-100 text-gray-800'}`}>
+                  {c.plan_status}
+                </span>
+              </div>
+              <div className="flex items-center gap-4 text-xs text-gray-500">
+                <span>{c.plan_name || 'No plan'}</span>
+                <span>{c.driver_count} drivers</span>
+                <span>{new Date(c.created_at).toLocaleDateString()}</span>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50">
               <tr>
@@ -122,9 +147,6 @@ export default function VendorDashboard() {
               ))}
             </tbody>
           </table>
-          {companies.length === 0 && (
-            <p className="text-center text-gray-400 py-8">No companies yet</p>
-          )}
         </div>
       </div>
     </div>
