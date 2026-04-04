@@ -121,14 +121,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Mobile topbar */}
-        <header className="lg:hidden flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200 shadow-sm">
-          <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100">
-            <Menu className="w-5 h-5" />
+        <header className="lg:hidden flex items-center gap-3 px-4 py-3 bg-blue-900 text-white shadow-md">
+          <button onClick={() => setSidebarOpen(true)} className="p-1.5 rounded-lg hover:bg-blue-800 transition-colors">
+            <Menu className="w-6 h-6" />
           </button>
-          <div className="flex items-center gap-2">
-            <Truck className="w-6 h-6 text-blue-600" />
-            <span className="font-bold text-gray-900">Fleeterzen</span>
-          </div>
+          <Truck className="w-6 h-6" />
+          <span className="font-bold text-lg">Fleeterzen</span>
         </header>
         <main className="flex-1 overflow-y-auto">
           {children}
