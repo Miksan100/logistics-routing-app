@@ -121,13 +121,12 @@ export default function CompanyDetailPage() {
     }
   };
 
-  const enterAdminPortal = async () => {
-    // Open the window synchronously (before await) to avoid popup blockers
+  const enterAdminPortal = async (userId?: string) => {
     const newTab = window.open('', '_blank');
     if (!newTab) return;
     setImpersonating(true);
     try {
-      const { data } = await vendorApi.post(`/companies/${id}/impersonate`);
+      const { data } = await vendorApi.post(`/companies/${id}/impersonate`, userId ? { userId } : {});
       const userEncoded = btoa(JSON.stringify(data.user));
       newTab.location.href = `/impersonate?token=${encodeURIComponent(data.token)}&user=${encodeURIComponent(userEncoded)}`;
     } catch (err: any) {
@@ -199,7 +198,7 @@ export default function CompanyDetailPage() {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={enterAdminPortal}
+            onClick={() => enterAdminPortal()}
             disabled={impersonating}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
           >
@@ -376,16 +375,28 @@ export default function CompanyDetailPage() {
                     </span>
                   </td>
                   <td className="px-5 py-3 text-right">
-                    <button
-                      onClick={() => toggleAdminStatus(u.id, u.is_active)}
-                      className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
-                        u.is_active
-                          ? 'bg-red-50 text-red-700 hover:bg-red-100'
-                          : 'bg-green-50 text-green-700 hover:bg-green-100'
-                      }`}
-                    >
-                      {u.is_active ? 'Terminate' : 'Reactivate'}
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      {u.is_active && (
+                        <button
+                          onClick={() => enterAdminPortal(u.id)}
+                          disabled={impersonating}
+                          className="text-xs font-medium px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors flex items-center gap-1"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          Enter as
+                        </button>
+                      )}
+                      <button
+                        onClick={() => toggleAdminStatus(u.id, u.is_active)}
+                        className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
+                          u.is_active
+                            ? 'bg-red-50 text-red-700 hover:bg-red-100'
+                            : 'bg-green-50 text-green-700 hover:bg-green-100'
+                        }`}
+                      >
+                        {u.is_active ? 'Terminate' : 'Reactivate'}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

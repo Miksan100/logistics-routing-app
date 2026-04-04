@@ -176,13 +176,14 @@ router.patch('/companies/:id/admins/:userId/status', authenticateVendor, async (
 
 router.post('/companies/:id/impersonate', authenticateVendor, async (req, res, next) => {
   try {
+    const { userId } = req.body;
     const result = await query(
       `SELECT u.id, u.company_id, u.email, u.first_name, u.last_name, u.role,
               c.name AS company_name
        FROM users u JOIN companies c ON c.id = u.company_id
        WHERE u.company_id = $1 AND u.role = 'admin' AND u.is_active = true
-       LIMIT 1`,
-      [req.params.id]
+         ${userId ? 'AND u.id = $2' : 'ORDER BY u.created_at LIMIT 1'}`,
+      userId ? [req.params.id, userId] : [req.params.id]
     );
     if (!result.rows.length) {
       return res.status(404).json({ error: 'No active admin found for this company' });
