@@ -410,10 +410,10 @@ export default function CompanyDetailPage() {
       <div className="mt-6 bg-white rounded-xl border border-gray-200 p-5">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="font-semibold text-gray-900">Admin Users ({users.length}/10)</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Up to 10 admins per company</p>
+            <h2 className="font-semibold text-gray-900">Admin Users ({users.filter((u: any) => u.role === 'admin' && u.is_active).length}/10)</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Up to 10 active admins per company</p>
           </div>
-          {users.filter((u: any) => u.role === 'admin').length < 10 && (
+          {users.filter((u: any) => u.role === 'admin' && u.is_active).length < 10 && (
             <button
               onClick={() => setShowAddAdmin(v => !v)}
               className="btn-primary flex items-center gap-2 px-4 py-2 text-sm"
