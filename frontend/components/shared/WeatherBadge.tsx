@@ -88,7 +88,7 @@ async function fetchWeather(lat: number, lng: number): Promise<WeatherData | nul
     condition: data.weatherCondition?.description?.text ?? '',
     humidity: Math.round(data.relativeHumidity ?? 0),
     windSpeed: Math.round(data.wind?.speed?.value ?? 0),
-    iconUrl: data.weatherCondition?.iconBaseUri ? `${data.weatherCondition.iconBaseUri}4x.png` : undefined,
+    iconUrl: data.weatherCondition?.iconBaseUri ? `${data.weatherCondition.iconBaseUri}.png` : undefined,
   };
 }
 
@@ -136,7 +136,7 @@ export default function WeatherBadge({ lat, lng, address, label }: Props) {
   return (
     <div className="mt-2 flex items-center gap-2 p-2.5 bg-sky-50 border border-sky-100 rounded-lg">
       {weather.iconUrl ? (
-        <img src={weather.iconUrl} alt={weather.condition} className="w-8 h-8" />
+        <img src={weather.iconUrl} alt={weather.condition} className="w-8 h-8" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
       ) : (
         <Cloud className="w-5 h-5 text-sky-400" />
       )}
