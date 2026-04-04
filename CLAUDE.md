@@ -48,9 +48,12 @@ LogiTrack/
     ├── components/
     │   ├── admin/             # DriverCard, DriverModal, VehicleModal, JobModal, ResetPasswordModal, RouteMap
     │   └── shared/            # StatusBadge
+    ├── app/
+    │   └── proxy-api/[...path]/route.ts  # Next.js Route Handler — proxies all methods to backend (used for UAT via ngrok)
     ├── lib/
     │   ├── api.ts             # Axios instance + typed API helpers
     │   ├── auth.ts            # sessionStorage token/user helpers (per-tab isolation)
+    │   ├── googleMaps.ts      # buildGoogleMapsUrl (waypoint routing) + getRouteData (Directions API)
     │   ├── vendorApi.ts       # Separate Axios instance for /api/vendor/*
     │   └── vendorAuth.ts      # sessionStorage helpers using fl_vendor_token / fl_vendor_user
     └── types/index.ts         # Shared TypeScript interfaces
@@ -78,6 +81,19 @@ PostgreSQL on localhost:5432, database `logistics_db` (local), user `postgres`.
 Run migrations manually via psql or `node migrations/run.js` (requires node in PATH).
 Migration 002 adds `vendor_users`, `plans`, and extends `companies` with billing columns.
 Seed: `admin@demo.com` / `Admin1234!`
+
+### UAT Testing (ngrok)
+Run `.\start-uat.ps1` from an Administrator PowerShell window at `C:\LogiTrack`.
+- Kills any running node/ngrok processes
+- Starts backend, then ngrok (single tunnel on port 3000 — free tier)
+- Patches `frontend/.env.local` with `NEXT_PUBLIC_API_URL=/proxy-api` and `BACKEND_URL=http://localhost:4000` (read-and-patch, never overwrites secrets)
+- Updates `backend/.env` CORS_ORIGIN to include the ngrok URL
+- Restarts backend with updated CORS, then starts frontend
+- Prints the shareable ngrok URL when ready
+
+The proxy route at `app/proxy-api/[...path]/route.ts` forwards all API calls from the ngrok domain to `localhost:4000`, solving the ngrok free-tier single-tunnel limitation.
+
+`ngrok.yml` at `C:\LogiTrack\ngrok.yml` defines the single `frontend` tunnel on port 3000. ngrok authtoken lives in the default config (`%LOCALAPPDATA%\ngrok\ngrok.yml`).
 
 ### Windows-specific notes
 - Run `npm run dev` from **Windows PowerShell**, not Git Bash — Git Bash cannot find `node` for npm scripts.
@@ -122,11 +138,12 @@ When driver completes a job: prompted for end odometer → calls `POST /api/odom
 Both endpoints accept optional `vehicleId` in the body as fallback if driver has no permanently assigned vehicle (uses the job's `assigned_vehicle_id`).
 
 ### GPS Route Tracking
-On job start: embedded Google Maps renders in-app with pickup→delivery route. Screen wake lock keeps display on.
+On job start: driver taps "Open in Google Maps". The URL uses the pickup address as a **waypoint** and delivery as the destination, with no origin set — Maps uses the driver's current GPS location automatically. This gives the correct: current location → pickup → delivery route.
 Browser `watchPosition` records GPS points and POSTs to `POST /api/tracking/job/:jobId/track`.
 Points stored in `job_gps_tracks` table. Admin views routes in Job History via Leaflet/OpenStreetMap (free).
-Google Maps API key stored in `frontend/.env.local` as `NEXT_PUBLIC_MAPS_API_KEY` (also in Vercel env vars for production).
+Google Maps API key stored in `frontend/.env.local` as `NEXT_PUBLIC_MAPS_API_KEY` and `backend/.env` as `GOOGLE_MAPS_API_KEY` (also in Vercel/Railway env vars for production).
 **Important:** API key is currently unrestricted — must be locked to production domain in Google Cloud Console before go-live.
+`lib/googleMaps.ts` — `buildGoogleMapsUrl` constructs the Maps deep-link URL. `getRouteData` fetches polyline/distance/duration via the Directions API.
 
 ### Dashboard Stats Split
 `getDashboardStats` returns two sets: all-time job counts + today-only counts.
@@ -148,9 +165,12 @@ Plans stored in `plans` table. `companies.plan_status` ∈ `{trial, active, susp
 - Job GPS track (driver): `POST /api/tracking/job/:jobId/track`
 - Job route (admin): `GET /api/tracking/job/:jobId/route`
 - Job history list (admin): `GET /api/tracking/jobs`
+- Weather proxy (tenant or vendor JWT): `GET /api/weather?lat=X&lng=Y`
 - Vendor auth: `POST /api/vendor/auth/login`, `GET /api/vendor/auth/me`
 - Vendor companies: `GET/POST /api/vendor/companies`, `GET /api/vendor/companies/:id`
-- Vendor company actions: `PATCH /api/vendor/companies/:id/status|plan|notes`
+- Vendor company actions: `PATCH /api/vendor/companies/:id/status|plan|notes|billing`
+- Vendor admin status: `PATCH /api/vendor/companies/:id/admins/:userId/status`
+- Vendor impersonate: `POST /api/vendor/companies/:id/impersonate` (body: `{ userId? }`)
 - Vendor stats: `GET /api/vendor/stats`
 - Vendor plans: `GET /api/vendor/plans`
 
