@@ -58,6 +58,6 @@ app.use((err, _req, res, _next) => {
 });
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log('Logistics API running on port ' + PORT));
+app.listen(PORT, () => console.log('Fleeterzen API running on port ' + PORT));
 
 module.exports = app;

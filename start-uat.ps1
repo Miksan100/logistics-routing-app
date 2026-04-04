@@ -32,6 +32,7 @@ $ngrokPath = (Get-Command ngrok -ErrorAction SilentlyContinue)?.Source
 if (-not $ngrokPath) {
     # Common install locations
     $candidates = @(
+        "C:\ngrok\ngrok.exe",
         "$env:LOCALAPPDATA\ngrok\ngrok.exe",
         "$env:ProgramFiles\ngrok\ngrok.exe",
         "$env:USERPROFILE\ngrok\ngrok.exe"
