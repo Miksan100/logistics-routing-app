@@ -2,6 +2,8 @@
 import { useState } from 'react';
 import type { Driver, Vehicle, Job } from '@/types';
 import { X, AlertCircle, Loader2 } from 'lucide-react';
+import AddressAutocomplete from './AddressAutocomplete';
+import WeatherBadge from '@/components/shared/WeatherBadge';
 
 interface Props {
   drivers: Driver[];
@@ -20,9 +22,11 @@ export default function JobModal({ drivers, vehicles, job, isCopy, onClose, onSa
     pickupAddress: job?.pickup_address ?? '',
     pickupLat: job?.pickup_lat?.toString() ?? '',
     pickupLng: job?.pickup_lng?.toString() ?? '',
+    pickupDetails: '',
     deliveryAddress: job?.delivery_address ?? '',
     deliveryLat: job?.delivery_lat?.toString() ?? '',
     deliveryLng: job?.delivery_lng?.toString() ?? '',
+    deliveryDetails: '',
     scheduledDate: isCopy ? today : (job?.scheduled_date ? job.scheduled_date.split('T')[0] : today),
     estimatedDurationMinutes: job?.estimated_duration_minutes?.toString() ?? '',
     plannedRouteDistanceKm: job?.planned_route_distance_km?.toString() ?? '',
@@ -37,9 +41,18 @@ export default function JobModal({ drivers, vehicles, job, isCopy, onClose, onSa
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true); setError('');
+    // Prepend additional details to address if provided
+    const pickupFinal = form.pickupDetails
+      ? `${form.pickupDetails}, ${form.pickupAddress}`
+      : form.pickupAddress;
+    const deliveryFinal = form.deliveryDetails
+      ? `${form.deliveryDetails}, ${form.deliveryAddress}`
+      : form.deliveryAddress;
     try {
       await onSave({
         ...form,
+        pickupAddress: pickupFinal,
+        deliveryAddress: deliveryFinal,
         pickupLat: form.pickupLat ? parseFloat(form.pickupLat) : null,
         pickupLng: form.pickupLng ? parseFloat(form.pickupLng) : null,
         deliveryLat: form.deliveryLat ? parseFloat(form.deliveryLat) : null,
@@ -63,31 +76,54 @@ export default function JobModal({ drivers, vehicles, job, isCopy, onClose, onSa
         </div>
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {error && <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 text-sm rounded-lg"><AlertCircle className="w-4 h-4" />{error}</div>}
+
           <div><label className="label">Job Title *</label><input className="input-field" required value={form.title} onChange={(e) => upd('title', e.target.value)} /></div>
           <div><label className="label">Description</label><textarea className="input-field resize-none" rows={2} value={form.description} onChange={(e) => upd('description', e.target.value)} /></div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-3">
+            {/* Pickup */}
+            <div className="space-y-1">
               <h4 className="font-medium text-gray-700 text-sm">Pickup Location</h4>
-              <div><label className="label">Address *</label><input className="input-field" required value={form.pickupAddress} onChange={(e) => upd('pickupAddress', e.target.value)} /></div>
-              <div className="grid grid-cols-2 gap-2">
-                <div><label className="label">Latitude</label><input className="input-field" type="number" step="any" value={form.pickupLat} onChange={(e) => upd('pickupLat', e.target.value)} /></div>
-                <div><label className="label">Longitude</label><input className="input-field" type="number" step="any" value={form.pickupLng} onChange={(e) => upd('pickupLng', e.target.value)} /></div>
-              </div>
+              <AddressAutocomplete
+                label="Address"
+                value={form.pickupAddress}
+                details={form.pickupDetails}
+                required
+                onSelect={(r) => setForm((p) => ({ ...p, pickupAddress: r.address, pickupLat: r.lat.toString(), pickupLng: r.lng.toString() }))}
+                onDetailsChange={(v) => upd('pickupDetails', v)}
+              />
+              <WeatherBadge
+                lat={form.pickupLat ? parseFloat(form.pickupLat) : null}
+                lng={form.pickupLng ? parseFloat(form.pickupLng) : null}
+                label="Pickup weather"
+              />
             </div>
-            <div className="space-y-3">
+
+            {/* Delivery */}
+            <div className="space-y-1">
               <h4 className="font-medium text-gray-700 text-sm">Delivery Location</h4>
-              <div><label className="label">Address *</label><input className="input-field" required value={form.deliveryAddress} onChange={(e) => upd('deliveryAddress', e.target.value)} /></div>
-              <div className="grid grid-cols-2 gap-2">
-                <div><label className="label">Latitude</label><input className="input-field" type="number" step="any" value={form.deliveryLat} onChange={(e) => upd('deliveryLat', e.target.value)} /></div>
-                <div><label className="label">Longitude</label><input className="input-field" type="number" step="any" value={form.deliveryLng} onChange={(e) => upd('deliveryLng', e.target.value)} /></div>
-              </div>
+              <AddressAutocomplete
+                label="Address"
+                value={form.deliveryAddress}
+                details={form.deliveryDetails}
+                required
+                onSelect={(r) => setForm((p) => ({ ...p, deliveryAddress: r.address, deliveryLat: r.lat.toString(), deliveryLng: r.lng.toString() }))}
+                onDetailsChange={(v) => upd('deliveryDetails', v)}
+              />
+              <WeatherBadge
+                lat={form.deliveryLat ? parseFloat(form.deliveryLat) : null}
+                lng={form.deliveryLng ? parseFloat(form.deliveryLng) : null}
+                label="Delivery weather"
+              />
             </div>
           </div>
+
           <div className="grid grid-cols-3 gap-3">
             <div><label className="label">Scheduled Date *</label><input className="input-field" type="date" required value={form.scheduledDate} onChange={(e) => upd('scheduledDate', e.target.value)} /></div>
             <div><label className="label">Duration (min)</label><input className="input-field" type="number" value={form.estimatedDurationMinutes} onChange={(e) => upd('estimatedDurationMinutes', e.target.value)} /></div>
             <div><label className="label">Distance (km)</label><input className="input-field" type="number" step="0.1" value={form.plannedRouteDistanceKm} onChange={(e) => upd('plannedRouteDistanceKm', e.target.value)} /></div>
           </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div><label className="label">Assign Driver</label>
               <select className="input-field" value={form.assignedDriverId} onChange={(e) => upd('assignedDriverId', e.target.value)}>
@@ -102,6 +138,7 @@ export default function JobModal({ drivers, vehicles, job, isCopy, onClose, onSa
               </select>
             </div>
           </div>
+
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancel</button>
             <button type="submit" disabled={saving} className="btn-primary flex-1 flex items-center justify-center gap-2">

@@ -9,6 +9,7 @@ import {
   MapPin, Clock, Truck, ArrowLeft, Loader2, AlertCircle,
   Play, Zap, CheckCircle2, XCircle, Gauge, Navigation
 } from 'lucide-react';
+import WeatherBadge from '@/components/shared/WeatherBadge';
 
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -141,6 +142,9 @@ export default function JobDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* Weather at delivery location */}
+        <WeatherBadge lat={job.delivery_lat} lng={job.delivery_lng} label="Weather at delivery" />
 
         {/* Meta */}
         <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap gap-4 text-sm text-gray-500">

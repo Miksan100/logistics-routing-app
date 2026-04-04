@@ -21,7 +21,7 @@ function loadGoogleMaps(apiKey: string): Promise<void> {
       callbacks.length = 0;
     };
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=_gmapsReady`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=_gmapsReady`;
     script.async = true;
     script.defer = true;
     document.head.appendChild(script);
