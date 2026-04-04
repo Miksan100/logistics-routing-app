@@ -171,6 +171,22 @@ RouteMap component must be loaded with `dynamic(() => import(...), { ssr: false 
 When `DATABASE_URL` is set, SSL is enabled with `rejectUnauthorized: false`.
 Run both migrations (001 + 002) on the production database before first deploy.
 
+## Secret / Credential Safety — MANDATORY
+
+**Never hardcode API keys, tokens, passwords, or any secrets in any file that is committed to git.**
+
+Rules:
+- Secrets live ONLY in `.env`, `.env.local`, `.env.production` — all gitignored.
+- Scripts (e.g. `start-uat.ps1`), config files, and source code that are committed must NEVER contain literal secret values.
+- If a script needs to write to an env file, it must READ the existing file and PATCH only the specific lines it needs — never rewrite the whole file with secrets embedded.
+- Before staging any file for commit, verify it contains no secrets. If it does, move the value to an env file and reference via environment variable.
+- If a secret is accidentally committed: rotate it immediately in the relevant service (Google Cloud, Railway, etc.), fix the code, and push. Inform the user so they can rotate their credentials.
+
+Env files in this project and where secrets live:
+- `backend/.env` — DB credentials, JWT secrets, Google Maps API key, SMTP credentials
+- `frontend/.env.local` — `NEXT_PUBLIC_MAPS_API_KEY`, `NEXT_PUBLIC_API_URL`, `BACKEND_URL`
+- Neither file is ever committed (both covered by root `.gitignore`)
+
 ## Pre-Deployment Checklist
 Must complete before going live:
 - [ ] Restrict Google Maps API key to production domains (currently unrestricted)
