@@ -80,8 +80,8 @@ if (-not $frontendUrl) {
 # --- 5. Update env files ---
 Write-Host "[5/6] Updating env files with ngrok URL..." -ForegroundColor Yellow
 
-# frontend/.env.local — API calls go through the Next.js proxy
-$envLocal = "NEXT_PUBLIC_API_URL=$frontendUrl/proxy-api`nNEXT_PUBLIC_MAPS_API_KEY=AIzaSyCgZgu0rXFYE27GEtKhzpAjkCJIqFDvok8`n"
+# frontend/.env.local — relative path works for both laptop and external testers
+$envLocal = "NEXT_PUBLIC_API_URL=/proxy-api`nNEXT_PUBLIC_MAPS_API_KEY=AIzaSyCgZgu0rXFYE27GEtKhzpAjkCJIqFDvok8`nBACKEND_URL=http://localhost:4000`n"
 Set-Content "C:\LogiTrack\frontend\.env.local" $envLocal -NoNewline
 
 # backend/.env — add ngrok URL to CORS
@@ -101,7 +101,7 @@ Start-Sleep -Seconds 2
 # --- 6. Start frontend ---
 Write-Host "[6/6] Starting frontend (this takes ~15 seconds)..." -ForegroundColor Yellow
 Start-Process powershell `
-    -ArgumentList "-NoExit", "-Command", "cd C:\LogiTrack\frontend; `$env:BACKEND_URL='http://localhost:4000'; npm run dev" `
+    -ArgumentList "-NoExit", "-Command", "cd C:\LogiTrack\frontend; npm run dev" `
     -WindowStyle Normal
 
 Start-Sleep -Seconds 5
