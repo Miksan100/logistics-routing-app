@@ -122,10 +122,10 @@ async function setCompanyPlan(companyId, planId, planStatus) {
   if (!result.rows.length) throw { status: 404, message: 'Company not found' };
 }
 
-async function updateCompanyBilling(companyId, billingType, billingAmount) {
+async function updateCompanyBilling(companyId, billingType, billingAmount, planId) {
   const result = await query(
-    'UPDATE companies SET billing_type = $1, billing_amount = $2, updated_at = NOW() WHERE id = $3 RETURNING id',
-    [billingType, billingAmount, companyId]
+    'UPDATE companies SET billing_type = $1, billing_amount = $2, plan_id = $3, updated_at = NOW() WHERE id = $4 RETURNING id',
+    [billingType, billingAmount, planId ?? null, companyId]
   );
   if (!result.rows.length) throw { status: 404, message: 'Company not found' };
 }

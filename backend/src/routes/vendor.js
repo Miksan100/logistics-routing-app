@@ -113,8 +113,8 @@ router.patch('/companies/:id/status', authenticateVendor, async (req, res, next)
 router.patch('/companies/:id/plan', authenticateVendor, async (req, res, next) => {
   try {
     const { planId, planStatus } = req.body;
-    if (!planId || !planStatus) return res.status(400).json({ error: 'planId and planStatus required' });
-    await vendorService.setCompanyPlan(req.params.id, planId, planStatus);
+    if (!planStatus) return res.status(400).json({ error: 'planStatus required' });
+    await vendorService.setCompanyPlan(req.params.id, planId ?? null, planStatus);
     res.json({ message: 'Plan updated' });
   } catch (err) {
     if (err.status) return res.status(err.status).json({ error: err.message });
@@ -124,11 +124,11 @@ router.patch('/companies/:id/plan', authenticateVendor, async (req, res, next) =
 
 router.patch('/companies/:id/billing', authenticateVendor, async (req, res, next) => {
   try {
-    const { billingType, billingAmount } = req.body;
+    const { billingType, billingAmount, planId } = req.body;
     if (!billingType || !['monthly', 'once_off'].includes(billingType)) {
       return res.status(400).json({ error: 'billingType must be monthly or once_off' });
     }
-    await vendorService.updateCompanyBilling(req.params.id, billingType, billingAmount ?? null);
+    await vendorService.updateCompanyBilling(req.params.id, billingType, billingAmount ?? null, planId ?? null);
     res.json({ message: 'Billing updated' });
   } catch (err) {
     if (err.status) return res.status(err.status).json({ error: err.message });
