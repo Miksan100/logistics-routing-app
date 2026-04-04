@@ -66,11 +66,14 @@ export function buildGoogleMapsUrl(
   pickupLat?: number | null, pickupLng?: number | null,
   deliveryLat?: number | null, deliveryLng?: number | null,
 ): string {
-  const origin = pickupLat && pickupLng
+  // Use pickup as a waypoint and delivery as destination.
+  // Omitting origin lets Google Maps use the driver's current location,
+  // so the route becomes: current location → pickup → delivery.
+  const waypoint = pickupLat && pickupLng
     ? `${pickupLat},${pickupLng}`
     : encodeURIComponent(pickupAddress);
   const destination = deliveryLat && deliveryLng
     ? `${deliveryLat},${deliveryLng}`
     : encodeURIComponent(deliveryAddress);
-  return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=driving`;
+  return `https://www.google.com/maps/dir/?api=1&waypoints=${waypoint}&destination=${destination}&travelmode=driving`;
 }
