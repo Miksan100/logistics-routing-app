@@ -122,9 +122,11 @@ When driver completes a job: prompted for end odometer → calls `POST /api/odom
 Both endpoints accept optional `vehicleId` in the body as fallback if driver has no permanently assigned vehicle (uses the job's `assigned_vehicle_id`).
 
 ### GPS Route Tracking
-On job start: browser opens Google Maps deep link (free, no API key) with pickup→delivery route.
+On job start: embedded Google Maps renders in-app with pickup→delivery route. Screen wake lock keeps display on.
 Browser `watchPosition` records GPS points and POSTs to `POST /api/tracking/job/:jobId/track`.
 Points stored in `job_gps_tracks` table. Admin views routes in Job History via Leaflet/OpenStreetMap (free).
+Google Maps API key stored in `frontend/.env.local` as `NEXT_PUBLIC_MAPS_API_KEY` (also in Vercel env vars for production).
+**Important:** API key is currently unrestricted — must be locked to production domain in Google Cloud Console before go-live.
 
 ### Dashboard Stats Split
 `getDashboardStats` returns two sets: all-time job counts + today-only counts.
@@ -168,3 +170,15 @@ RouteMap component must be loaded with `dynamic(() => import(...), { ssr: false 
 `backend/src/config/database.js` accepts `DATABASE_URL` env var (Railway postgres).
 When `DATABASE_URL` is set, SSL is enabled with `rejectUnauthorized: false`.
 Run both migrations (001 + 002) on the production database before first deploy.
+
+## Pre-Deployment Checklist
+Must complete before going live:
+- [ ] Restrict Google Maps API key to production domains (currently unrestricted)
+- [ ] Set `NEXT_PUBLIC_MAPS_API_KEY` in Vercel env vars
+- [ ] Set `NEXT_PUBLIC_API_URL=https://api.fleeterzen.com/api` in Vercel
+- [ ] Set strong `JWT_SECRET` and `VENDOR_JWT_SECRET` in Railway (not dev values)
+- [ ] Set `CORS_ORIGIN` to exact production domain in Railway
+- [ ] Set `DATABASE_URL` in Railway
+- [ ] Run migrations 001 + 002 on Railway Postgres
+- [ ] DNS: fleeterzen.com registered, api.fleeterzen.com → Railway, app.fleeterzen.com → Vercel
+- [ ] Confirm plain_password column removed before any real clients onboarded
