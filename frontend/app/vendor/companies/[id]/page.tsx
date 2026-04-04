@@ -133,6 +133,19 @@ export default function CompanyDetailPage() {
     }
   };
 
+  const toggleAdminStatus = async (userId: string, currentlyActive: boolean) => {
+    try {
+      await vendorApi.patch(`/companies/${id}/admins/${userId}/status`, { isActive: !currentlyActive });
+      setMsg(currentlyActive ? 'Admin terminated' : 'Admin reactivated');
+      const { data } = await vendorApi.get(`/companies/${id}`);
+      setDetail(d => d ? { ...d, users: data.users } : d);
+      setTimeout(() => setMsg(''), 3000);
+    } catch (err: any) {
+      setMsg(err.response?.data?.error || 'Failed to update admin status');
+      setTimeout(() => setMsg(''), 3000);
+    }
+  };
+
   const toggleStatus = async () => {
     if (!detail) return;
     const newActive = !detail.company.is_active;
@@ -328,6 +341,7 @@ export default function CompanyDetailPage() {
                 <th className="px-5 py-3 text-left font-medium text-gray-500">Role</th>
                 <th className="px-5 py-3 text-left font-medium text-gray-500">Last Login</th>
                 <th className="px-5 py-3 text-left font-medium text-gray-500">Status</th>
+                <th className="px-5 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -339,8 +353,20 @@ export default function CompanyDetailPage() {
                   <td className="px-5 py-3 text-gray-500">{u.last_login ? new Date(u.last_login).toLocaleString() : '—'}</td>
                   <td className="px-5 py-3">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${u.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                      {u.is_active ? 'Active' : 'Inactive'}
+                      {u.is_active ? 'Active' : 'Terminated'}
                     </span>
+                  </td>
+                  <td className="px-5 py-3 text-right">
+                    <button
+                      onClick={() => toggleAdminStatus(u.id, u.is_active)}
+                      className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
+                        u.is_active
+                          ? 'bg-red-50 text-red-700 hover:bg-red-100'
+                          : 'bg-green-50 text-green-700 hover:bg-green-100'
+                      }`}
+                    >
+                      {u.is_active ? 'Terminate' : 'Reactivate'}
+                    </button>
                   </td>
                 </tr>
               ))}

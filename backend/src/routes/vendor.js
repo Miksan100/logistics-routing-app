@@ -162,6 +162,18 @@ router.post('/companies/:id/admins', authenticateVendor, async (req, res, next) 
   }
 });
 
+router.patch('/companies/:id/admins/:userId/status', authenticateVendor, async (req, res, next) => {
+  try {
+    const { isActive } = req.body;
+    if (typeof isActive !== 'boolean') return res.status(400).json({ error: 'isActive (boolean) required' });
+    await vendorService.setAdminStatus(req.params.id, req.params.userId, isActive);
+    res.json({ message: isActive ? 'Admin activated' : 'Admin terminated' });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message });
+    next(err);
+  }
+});
+
 router.post('/companies/:id/impersonate', authenticateVendor, async (req, res, next) => {
   try {
     const result = await query(

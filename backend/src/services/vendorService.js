@@ -209,6 +209,15 @@ async function addCompanyAdmin(companyId, data) {
   return { userId, adminEmail };
 }
 
+async function setAdminStatus(companyId, userId, isActive) {
+  const result = await query(
+    `UPDATE users SET is_active = $1, updated_at = NOW()
+     WHERE id = $2 AND company_id = $3 AND role = 'admin' RETURNING id`,
+    [isActive, userId, companyId]
+  );
+  if (!result.rows.length) throw { status: 404, message: 'Admin not found' };
+}
+
 module.exports = {
   listCompanies,
   getCompanyDetail,
@@ -220,4 +229,5 @@ module.exports = {
   getPlatformStats,
   listPlans,
   addCompanyAdmin,
+  setAdminStatus,
 };
