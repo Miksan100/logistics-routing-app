@@ -143,7 +143,8 @@ export default function JobDetailPage() {
           </div>
         </div>
 
-        {/* Weather at delivery location */}
+        {/* Weather at pickup and delivery locations */}
+        <WeatherBadge lat={job.pickup_lat} lng={job.pickup_lng} label="Weather at pickup" />
         <WeatherBadge lat={job.delivery_lat} lng={job.delivery_lng} label="Weather at delivery" />
 
         {/* Meta */}
