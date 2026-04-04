@@ -67,11 +67,10 @@ export default function CompanyDetailPage() {
   };
 
   const savePlan = async () => {
-    if (!selectedPlan) return;
     setSaving(true);
     try {
-      await vendorApi.patch(`/companies/${id}/plan`, { planId: selectedPlan, planStatus });
-      setMsg('Plan updated');
+      await vendorApi.patch(`/companies/${id}/plan`, { planId: selectedPlan || null, planStatus });
+      setMsg('Plan status updated');
     } finally {
       setSaving(false);
       setTimeout(() => setMsg(''), 3000);
@@ -81,7 +80,11 @@ export default function CompanyDetailPage() {
   const saveBilling = async () => {
     setSaving(true);
     try {
-      await vendorApi.patch(`/companies/${id}/billing`, { billingType, billingAmount: billingAmount !== '' ? billingAmount : null });
+      await vendorApi.patch(`/companies/${id}/billing`, {
+        billingType,
+        billingAmount: billingAmount !== '' ? billingAmount : null,
+        ...(billingType === 'monthly' && { planId: selectedPlan || null }),
+      });
       setMsg('Billing info saved');
     } finally {
       setSaving(false);
@@ -218,19 +221,6 @@ export default function CompanyDetailPage() {
           <h2 className="font-semibold text-gray-900 mb-4">Subscription Plan</h2>
           <div className="space-y-3">
             <div>
-              <label className="label">Plan</label>
-              <select
-                value={selectedPlan}
-                onChange={(e) => setSelectedPlan(e.target.value)}
-                className="input-field"
-              >
-                <option value="">— No plan —</option>
-                {plans.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name} (R{p.price_monthly}/mo)</option>
-                ))}
-              </select>
-            </div>
-            <div>
               <label className="label">Plan Status</label>
               <select value={planStatus} onChange={(e) => setPlanStatus(e.target.value)} className="input-field">
                 <option value="trial">Trial</option>
@@ -241,11 +231,11 @@ export default function CompanyDetailPage() {
             </div>
             <button
               onClick={savePlan}
-              disabled={saving || !selectedPlan}
+              disabled={saving}
               className="btn-primary flex items-center gap-2 px-4 py-2 text-sm"
             >
               <Save className="w-4 h-4" />
-              Save Plan
+              Save Status
             </button>
           </div>
         </div>
@@ -282,8 +272,27 @@ export default function CompanyDetailPage() {
               <option value="once_off">Once-off</option>
             </select>
           </div>
+
+          {billingType === 'monthly' && (
+            <div>
+              <label className="label">Plan</label>
+              <select
+                value={selectedPlan}
+                onChange={(e) => setSelectedPlan(e.target.value)}
+                className="input-field"
+              >
+                <option value="">— No plan —</option>
+                {plans.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name} — R{p.price_monthly}/mo</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div>
-            <label className="label">Billing Amount (R)</label>
+            <label className="label">
+              {billingType === 'monthly' ? 'Custom Amount (R) — overrides plan price' : 'Amount (R)'}
+            </label>
             <input
               type="number"
               value={billingAmount}
@@ -291,7 +300,7 @@ export default function CompanyDetailPage() {
               className="input-field"
               min="0"
               step="0.01"
-              placeholder="0.00"
+              placeholder={billingType === 'monthly' ? 'Leave blank to use plan price' : '0.00'}
             />
           </div>
         </div>
