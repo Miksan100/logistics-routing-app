@@ -71,10 +71,14 @@ async function geocodeAddress(address: string, apiKey: string): Promise<{ lat: n
   });
 }
 
-async function fetchWeather(lat: number, lng: number, apiKey: string): Promise<WeatherData | null> {
-  const r = await fetch(
-    `https://weather.googleapis.com/v1/currentConditions:lookup?location.latitude=${lat}&location.longitude=${lng}&key=${apiKey}`
-  );
+async function fetchWeather(lat: number, lng: number): Promise<WeatherData | null> {
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+  const r = await fetch(`${apiBase}/weather?lat=${lat}&lng=${lng}`, {
+    headers: {
+      Authorization: `Bearer ${typeof window !== 'undefined' ? (sessionStorage.getItem('logistics_token') || sessionStorage.getItem('fl_vendor_token') || '') : ''}`,
+    },
+  });
+  if (!r.ok) return null;
   const data = await r.json();
   const c = data.currentConditions;
   if (!c) return null;
@@ -110,7 +114,7 @@ export default function WeatherBadge({ lat, lng, address, label }: Props) {
         }
 
         if (!resolvedLat || !resolvedLng) return;
-        const data = await fetchWeather(resolvedLat, resolvedLng, apiKey);
+        const data = await fetchWeather(resolvedLat, resolvedLng);
         if (!cancelled) setWeather(data);
       } catch {
         // silently hide on error

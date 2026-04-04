@@ -12,6 +12,7 @@ const odometerRoutes = require('./routes/odometer');
 const trackingRoutes = require('./routes/tracking');
 const analyticsRoutes = require('./routes/analytics');
 const vendorRoutes = require('./routes/vendor');
+const weatherRoutes = require('./routes/weather');
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use('/api/odometer', odometerRoutes);
 app.use('/api/tracking', trackingRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/vendor', vendorRoutes);
+app.use('/api/weather', weatherRoutes);
 
 app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
 
