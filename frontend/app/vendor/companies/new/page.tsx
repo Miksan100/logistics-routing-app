@@ -132,15 +132,6 @@ export default function NewCompanyPage() {
               <input type="email" value={form.billingEmail} onChange={set('billingEmail')} className="input-field" placeholder="billing@company.com" />
             </div>
             <div>
-              <label className="label">Plan</label>
-              <select value={form.planId} onChange={set('planId')} className="input-field">
-                <option value="">— No plan —</option>
-                {plans.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name} (R{p.price_monthly}/mo)</option>
-                ))}
-              </select>
-            </div>
-            <div>
               <label className="label">Plan Status</label>
               <select value={form.planStatus} onChange={set('planStatus')} className="input-field">
                 <option value="trial">Trial</option>
@@ -156,9 +147,30 @@ export default function NewCompanyPage() {
                 <option value="once_off">Once-off</option>
               </select>
             </div>
+            {form.billingType === 'monthly' && (
+              <div>
+                <label className="label">Plan</label>
+                <select value={form.planId} onChange={set('planId')} className="input-field">
+                  <option value="">— No plan —</option>
+                  {plans.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name} — R{p.price_monthly}/mo</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div>
-              <label className="label">Billing Amount (R)</label>
-              <input type="number" value={form.billingAmount} onChange={set('billingAmount')} className="input-field" min="0" step="0.01" placeholder="0.00" />
+              <label className="label">
+                {form.billingType === 'monthly' ? 'Custom Amount (R) — overrides plan price' : 'Amount (R)'}
+              </label>
+              <input
+                type="number"
+                value={form.billingAmount}
+                onChange={set('billingAmount')}
+                className="input-field"
+                min="0"
+                step="0.01"
+                placeholder={form.billingType === 'monthly' ? 'Leave blank to use plan price' : '0.00'}
+              />
             </div>
           </div>
         </div>
