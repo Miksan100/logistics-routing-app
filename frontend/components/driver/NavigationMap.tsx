@@ -1,5 +1,6 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { AlertCircle, Navigation } from 'lucide-react';
 
 interface NavigationMapProps {
   pickupAddress: string;
@@ -10,6 +11,11 @@ interface NavigationMapProps {
   deliveryLng?: number | null;
   driverLat?: number | null;
   driverLng?: number | null;
+}
+
+interface DirectionStep {
+  instructions: string;
+  distance: string;
 }
 
 declare global {
@@ -47,9 +53,16 @@ export default function NavigationMap({
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const driverMarkerRef = useRef<any>(null);
+  const [routeError, setRouteError] = useState('');
+  const [steps, setSteps] = useState<DirectionStep[]>([]);
+  const [routeSummary, setRouteSummary] = useState('');
   const apiKey = process.env.NEXT_PUBLIC_MAPS_API_KEY || '';
 
   useEffect(() => {
+    if (!apiKey) {
+      setRouteError('Google Maps API key is not configured.');
+      return;
+    }
     loadGoogleMaps(apiKey, initMap);
     return () => {
       mapInstanceRef.current = null;
@@ -63,6 +76,7 @@ export default function NavigationMap({
     const pos = { lat: driverLat, lng: driverLng };
     if (driverMarkerRef.current) {
       driverMarkerRef.current.setPosition(pos);
+      mapInstanceRef.current.panTo(pos);
     } else {
       driverMarkerRef.current = new window.google.maps.Marker({
         position: pos,
@@ -76,6 +90,7 @@ export default function NavigationMap({
           strokeColor: '#ffffff',
           strokeWeight: 2,
         },
+        zIndex: 10,
       });
     }
   }, [driverLat, driverLng]);
@@ -85,7 +100,7 @@ export default function NavigationMap({
 
     const map = new window.google.maps.Map(mapRef.current, {
       zoom: 13,
-      center: { lat: -26.2041, lng: 28.0473 }, // Johannesburg default
+      center: { lat: -26.2041, lng: 28.0473 },
       mapTypeControl: false,
       fullscreenControl: false,
       streetViewControl: false,
@@ -108,24 +123,71 @@ export default function NavigationMap({
       : deliveryAddress;
 
     directionsService.route(
-      {
-        origin,
-        destination,
-        travelMode: window.google.maps.TravelMode.DRIVING,
-      },
+      { origin, destination, travelMode: window.google.maps.TravelMode.DRIVING },
       (result: any, status: any) => {
         if (status === 'OK') {
           directionsRenderer.setDirections(result);
+          const leg = result.routes[0]?.legs[0];
+          if (leg) {
+            setRouteSummary(`${leg.distance?.text} · ${leg.duration?.text}`);
+            setSteps(leg.steps.map((s: any) => ({
+              instructions: s.instructions.replace(/<[^>]*>/g, ''),
+              distance: s.distance?.text || '',
+            })));
+          }
+        } else {
+          const messages: Record<string, string> = {
+            NOT_FOUND: 'One or more addresses could not be found. Check the job addresses.',
+            ZERO_RESULTS: 'No driving route found between these addresses.',
+            REQUEST_DENIED: 'Directions API request denied — check that billing is enabled in Google Cloud and the Directions API is active.',
+            OVER_DAILY_LIMIT: 'Google Maps API daily limit reached.',
+            OVER_QUERY_LIMIT: 'Google Maps API query limit reached.',
+            INVALID_REQUEST: 'Invalid route request — addresses may be missing or malformed.',
+          };
+          setRouteError(messages[status] || `Could not load route (${status}).`);
         }
       }
     );
   }
 
   return (
-    <div
-      ref={mapRef}
-      className="w-full rounded-xl overflow-hidden border border-gray-200"
-      style={{ height: '340px' }}
-    />
+    <div className="space-y-2">
+      <div
+        ref={mapRef}
+        className="w-full rounded-xl overflow-hidden border border-gray-200"
+        style={{ height: '300px' }}
+      />
+
+      {routeError && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2 text-red-700 text-sm">
+          <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <span>{routeError}</span>
+        </div>
+      )}
+
+      {routeSummary && (
+        <div className="flex items-center gap-2 px-1 text-sm text-gray-500">
+          <Navigation className="w-4 h-4 text-blue-500" />
+          <span className="font-medium text-gray-700">{routeSummary}</span>
+        </div>
+      )}
+
+      {steps.length > 0 && (
+        <div className="card divide-y divide-gray-100 !p-0 overflow-hidden">
+          <p className="px-4 py-2.5 text-xs font-semibold text-gray-400 uppercase tracking-wide bg-gray-50">Turn-by-turn directions</p>
+          <div className="max-h-48 overflow-y-auto">
+            {steps.map((step, i) => (
+              <div key={i} className="flex items-start gap-3 px-4 py-2.5 text-sm">
+                <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">{i + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-gray-800">{step.instructions}</p>
+                  {step.distance && <p className="text-xs text-gray-400 mt-0.5">{step.distance}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
