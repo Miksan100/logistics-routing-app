@@ -1,16 +1,14 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import dynamic from 'next/dynamic';
 import { jobsApi, odometerApi, trackingApi } from '@/lib/api';
+import { getRouteData, buildGoogleMapsUrl } from '@/lib/googleMaps';
 import type { Job } from '@/types';
 import StatusBadge from '@/components/shared/StatusBadge';
 import {
   MapPin, Clock, Truck, ArrowLeft, Loader2, AlertCircle,
-  Play, Zap, CheckCircle2, XCircle, Gauge
+  Play, Zap, CheckCircle2, XCircle, Gauge, Navigation
 } from 'lucide-react';
-
-const NavigationMap = dynamic(() => import('@/components/driver/NavigationMap'), { ssr: false });
 
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -22,22 +20,27 @@ export default function JobDetailPage() {
   const [showCancelForm, setShowCancelForm] = useState(false);
   const [error, setError] = useState('');
   const watchIdRef = useRef<number | null>(null);
+  const wakeLockRef = useRef<any>(null);
+  const [showStartOdo, setShowStartOdo] = useState(false);
+  const [startOdo, setStartOdo] = useState('');
+  const [showEndOdo, setShowEndOdo] = useState(false);
+  const [endOdo, setEndOdo] = useState('');
 
   // Stop GPS tracking on unmount
-  useEffect(() => () => { if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current); }, []);
+  useEffect(() => () => {
+    if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current);
+    if (wakeLockRef.current) wakeLockRef.current.release();
+  }, []);
 
   const startGPSTracking = (jobId: string) => {
     if (!navigator.geolocation) return;
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
-        setDriverLat(pos.coords.latitude);
-        setDriverLng(pos.coords.longitude);
         trackingApi.recordJobGPS(jobId, pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy).catch(() => {});
       },
       () => {},
       { enableHighAccuracy: true, maximumAge: 30000, timeout: 15000 }
     );
-    // Keep screen awake during navigation
     if ('wakeLock' in navigator) {
       (navigator as any).wakeLock.request('screen').then((lock: any) => { wakeLockRef.current = lock; }).catch(() => {});
     }
@@ -47,15 +50,6 @@ export default function JobDetailPage() {
     if (watchIdRef.current !== null) { navigator.geolocation.clearWatch(watchIdRef.current); watchIdRef.current = null; }
     if (wakeLockRef.current) { wakeLockRef.current.release(); wakeLockRef.current = null; }
   };
-
-  const wakeLockRef = useRef<any>(null);
-  const [showMap, setShowMap] = useState(false);
-  const [driverLat, setDriverLat] = useState<number | null>(null);
-  const [driverLng, setDriverLng] = useState<number | null>(null);
-  const [showStartOdo, setShowStartOdo] = useState(false);
-  const [startOdo, setStartOdo] = useState('');
-  const [showEndOdo, setShowEndOdo] = useState(false);
-  const [endOdo, setEndOdo] = useState('');
 
   const load = async () => {
     try { setJob(await jobsApi.get(id)); }
@@ -70,6 +64,14 @@ export default function JobDetailPage() {
     try { await action(); await load(); setShowCancelForm(false); }
     catch (err: any) { setError(err.response?.data?.error || 'Action failed'); }
     finally { setActionLoading(false); }
+  };
+
+  const openGoogleMaps = (j: Job) => {
+    const url = buildGoogleMapsUrl(
+      j.pickup_address, j.delivery_address,
+      j.pickup_lat, j.pickup_lng, j.delivery_lat, j.delivery_lng
+    );
+    window.open(url, '_blank');
   };
 
   if (loading) return (
@@ -87,6 +89,7 @@ export default function JobDetailPage() {
   const canComplete = job.status === 'in_progress';
   const canCancel   = ['pending', 'started', 'in_progress'].includes(job.status);
   const isDone      = job.status === 'completed' || job.status === 'cancelled';
+  const isActive    = job.status === 'started' || job.status === 'in_progress';
 
   return (
     <div className="p-4 max-w-2xl mx-auto space-y-4">
@@ -141,16 +144,24 @@ export default function JobDetailPage() {
 
         {/* Meta */}
         <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap gap-4 text-sm text-gray-500">
-          {job.estimated_duration_minutes && (
+          {(job as any).route_duration_minutes ? (
+            <span className="flex items-center gap-1.5">
+              <Clock className="w-4 h-4" />{(job as any).route_duration_minutes} min
+            </span>
+          ) : job.estimated_duration_minutes ? (
             <span className="flex items-center gap-1.5">
               <Clock className="w-4 h-4" />{job.estimated_duration_minutes} min est.
             </span>
-          )}
-          {job.planned_route_distance_km && (
+          ) : null}
+          {(job as any).route_distance_km ? (
+            <span className="flex items-center gap-1.5">
+              <Truck className="w-4 h-4" />{(job as any).route_distance_km} km
+            </span>
+          ) : job.planned_route_distance_km ? (
             <span className="flex items-center gap-1.5">
               <Truck className="w-4 h-4" />{job.planned_route_distance_km} km
             </span>
-          )}
+          ) : null}
           {job.registration_number && (
             <span className="flex items-center gap-1.5 font-medium text-gray-700">
               <Truck className="w-4 h-4" />{job.registration_number} {job.make} {job.model}
@@ -159,18 +170,15 @@ export default function JobDetailPage() {
         </div>
       </div>
 
-      {/* In-app navigation map — shown while job is active */}
-      {(showMap || job.status === 'started' || job.status === 'in_progress') && (
-        <NavigationMap
-          pickupAddress={job.pickup_address}
-          deliveryAddress={job.delivery_address}
-          pickupLat={job.pickup_lat}
-          pickupLng={job.pickup_lng}
-          deliveryLat={job.delivery_lat}
-          deliveryLng={job.delivery_lng}
-          driverLat={driverLat}
-          driverLng={driverLng}
-        />
+      {/* Open in Google Maps button — shown while job is active */}
+      {isActive && (
+        <button
+          onClick={() => openGoogleMaps(job)}
+          className="w-full py-3.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition-colors"
+        >
+          <Navigation className="w-5 h-5" />
+          Open in Google Maps
+        </button>
       )}
 
       {/* Cancellation note */}
@@ -212,11 +220,25 @@ export default function JobDetailPage() {
                 <button onClick={() => { setShowStartOdo(false); setStartOdo(''); }} className="btn-secondary flex-1">Back</button>
                 <button
                   onClick={() => startOdo && doAction(async () => {
+                    // Open Google Maps immediately (before awaits) to avoid popup blocker
+                    const mapsTab = window.open('', '_blank');
                     await odometerApi.startDay(parseFloat(startOdo), job.assigned_vehicle_id ?? undefined);
                     await jobsApi.start(job.id);
-                    setShowStartOdo(false); setStartOdo('');
+                    // Fetch and save route data in background (non-blocking)
+                    getRouteData(
+                      job.pickup_lat && job.pickup_lng ? { lat: job.pickup_lat, lng: job.pickup_lng } : job.pickup_address,
+                      job.delivery_lat && job.delivery_lng ? { lat: job.delivery_lat, lng: job.delivery_lng } : job.delivery_address,
+                    ).then((route) => {
+                      if (route) jobsApi.saveRoute(job.id, route).catch(() => {});
+                    });
                     startGPSTracking(job.id);
-                    setShowMap(true);
+                    setShowStartOdo(false); setStartOdo('');
+                    // Navigate the already-opened tab to Google Maps
+                    const url = buildGoogleMapsUrl(
+                      job.pickup_address, job.delivery_address,
+                      job.pickup_lat, job.pickup_lng, job.delivery_lat, job.delivery_lng
+                    );
+                    if (mapsTab) mapsTab.location.href = url;
                   })}
                   disabled={!startOdo || actionLoading}
                   className="btn-primary flex-1 flex items-center justify-center gap-2"
@@ -234,10 +256,7 @@ export default function JobDetailPage() {
               disabled={actionLoading}
               className="w-full py-4 text-base bg-yellow-500 hover:bg-yellow-600 active:bg-yellow-700 text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition-colors"
             >
-              {actionLoading
-                ? <Loader2 className="w-5 h-5 animate-spin" />
-                : <Zap className="w-5 h-5" />
-              }
+              {actionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5" />}
               Mark In Progress
             </button>
           )}
@@ -270,7 +289,12 @@ export default function JobDetailPage() {
               <div className="flex gap-2">
                 <button onClick={() => { setShowEndOdo(false); setEndOdo(''); }} className="btn-secondary flex-1">Back</button>
                 <button
-                  onClick={() => endOdo && doAction(async () => { await odometerApi.endDay(parseFloat(endOdo), job.assigned_vehicle_id ?? undefined); await jobsApi.complete(job.id); setShowEndOdo(false); setEndOdo(''); stopGPSTracking(); })}
+                  onClick={() => endOdo && doAction(async () => {
+                    await odometerApi.endDay(parseFloat(endOdo), job.assigned_vehicle_id ?? undefined);
+                    await jobsApi.complete(job.id);
+                    setShowEndOdo(false); setEndOdo('');
+                    stopGPSTracking();
+                  })}
                   disabled={!endOdo || actionLoading}
                   className="btn-success flex-1 flex items-center justify-center gap-2"
                 >
@@ -301,12 +325,7 @@ export default function JobDetailPage() {
                 onChange={(e) => setCancelReason(e.target.value)}
               />
               <div className="flex gap-2">
-                <button
-                  onClick={() => { setShowCancelForm(false); setCancelReason(''); }}
-                  className="btn-secondary flex-1"
-                >
-                  Back
-                </button>
+                <button onClick={() => { setShowCancelForm(false); setCancelReason(''); }} className="btn-secondary flex-1">Back</button>
                 <button
                   onClick={() => cancelReason.trim() && doAction(() => jobsApi.cancel(job.id, cancelReason))}
                   disabled={!cancelReason.trim() || actionLoading}

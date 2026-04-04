@@ -66,6 +66,8 @@ export const jobsApi = {
   progress: (id: string) => api.post(`/jobs/${id}/progress`).then((r) => r.data),
   complete: (id: string) => api.post(`/jobs/${id}/complete`).then((r) => r.data),
   cancel: (id: string, reason: string) => api.post(`/jobs/${id}/cancel`, { reason }).then((r) => r.data),
+  saveRoute: (id: string, data: { polyline: string; distanceKm?: number; durationMinutes?: number }) =>
+    api.patch(`/jobs/${id}/route`, data).then((r) => r.data),
 };
 
 // Odometer

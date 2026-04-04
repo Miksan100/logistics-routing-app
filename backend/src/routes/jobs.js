@@ -58,6 +58,16 @@ router.put('/:id', requireRole('admin'), async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// Driver: save route data (polyline + distance + duration from Google Directions API)
+router.patch('/:id/route', requireRole('driver'), async (req, res, next) => {
+  try {
+    const { polyline, distanceKm, durationMinutes } = req.body;
+    if (!polyline) return res.status(400).json({ error: 'polyline is required' });
+    await svc.saveRouteData(req.params.id, req.user.company_id, polyline, distanceKm, durationMinutes);
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
 // Driver: start job
 router.post('/:id/start', requireRole('driver'), async (req, res, next) => {
   try {

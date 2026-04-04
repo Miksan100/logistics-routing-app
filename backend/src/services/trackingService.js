@@ -66,6 +66,7 @@ async function getJobsWithRoutes(companyId) {
   const result = await query(
     `SELECT j.id, j.title, j.pickup_address, j.delivery_address, j.scheduled_date,
             j.status, j.started_at, j.completed_at,
+            j.route_polyline, j.route_distance_km, j.route_duration_minutes,
             d.first_name || ' ' || d.last_name AS driver_name,
             v.registration_number, v.make, v.model,
             COUNT(t.id) AS gps_point_count

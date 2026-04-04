@@ -54,7 +54,8 @@ export default function JobHistoryDetailPage() {
             {job.driver_name && <div className="flex items-center gap-2"><User className="w-4 h-4 text-blue-500" /><span>{job.driver_name}</span></div>}
             {job.registration_number && <div className="flex items-center gap-2"><Truck className="w-4 h-4 text-gray-500" /><span>{job.registration_number} — {job.make} {job.model}</span></div>}
             {duration !== null && <div className="flex items-center gap-2"><Clock className="w-4 h-4 text-gray-500" /><span>{duration} min actual duration</span></div>}
-            <div className="flex items-center gap-2"><Route className="w-4 h-4 text-blue-500" /><span>{route.length} GPS points recorded</span></div>
+            {job.route_distance_km && <div className="flex items-center gap-2"><Route className="w-4 h-4 text-blue-500" /><span>{job.route_distance_km} km · {job.route_duration_minutes} min planned</span></div>}
+            <div className="flex items-center gap-2"><Route className="w-4 h-4 text-gray-400" /><span>{route.length} GPS points recorded</span></div>
           </div>
         </div>
 
@@ -70,11 +71,11 @@ export default function JobHistoryDetailPage() {
         <h2 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
           <Route className="w-4 h-4 text-blue-600" /> Route Taken
         </h2>
-        {route.length > 0 ? (
-          <RouteMap points={route} />
+        {route.length > 0 || job.route_polyline ? (
+          <RouteMap points={route} polyline={job.route_polyline} />
         ) : (
           <div className="flex items-center justify-center h-48 bg-gray-50 rounded-xl text-gray-400 text-sm">
-            No GPS route recorded for this job.
+            No route data recorded for this job.
           </div>
         )}
       </div>

@@ -156,4 +156,12 @@ async function getTodayJobsForDriver(driverId, companyId) {
   return result.rows;
 }
 
-module.exports = { listJobs, getJob, createJob, updateJob, updateJobStatus, getTodayJobsForDriver };
+async function saveRouteData(jobId, companyId, polyline, distanceKm, durationMinutes) {
+  await query(
+    `UPDATE jobs SET route_polyline = $1, route_distance_km = $2, route_duration_minutes = $3, updated_at = NOW()
+     WHERE id = $4 AND company_id = $5`,
+    [polyline, distanceKm || null, durationMinutes || null, jobId, companyId]
+  );
+}
+
+module.exports = { listJobs, getJob, createJob, updateJob, updateJobStatus, getTodayJobsForDriver, saveRouteData };
