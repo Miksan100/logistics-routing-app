@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import vendorApi from '@/lib/vendorApi';
-import { ArrowLeft, Save, Power, PowerOff, Plus, Loader2, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Save, Power, PowerOff, Plus, Loader2, ExternalLink, Eye, EyeOff } from 'lucide-react';
 
 interface Plan { id: string; name: string; price_monthly: number; }
 interface CompanyDetail {
@@ -33,6 +33,12 @@ export default function CompanyDetailPage() {
   const [billingType, setBillingType] = useState('monthly');
   const [billingAmount, setBillingAmount] = useState('');
   const [impersonating, setImpersonating] = useState(false);
+  const [revealedPasswords, setRevealedPasswords] = useState<Set<string>>(new Set());
+  const toggleReveal = (userId: string) => setRevealedPasswords(prev => {
+    const next = new Set(prev);
+    next.has(userId) ? next.delete(userId) : next.add(userId);
+    return next;
+  });
   const [showAddAdmin, setShowAddAdmin] = useState(false);
   const [adminForm, setAdminForm] = useState({ adminFirstName: '', adminLastName: '', adminEmail: '', adminPassword: '', adminIdNumber: '' });
   const [addingAdmin, setAddingAdmin] = useState(false);
@@ -340,6 +346,7 @@ export default function CompanyDetailPage() {
                 <th className="px-5 py-3 text-left font-medium text-gray-500">Email</th>
                 <th className="px-5 py-3 text-left font-medium text-gray-500">Role</th>
                 <th className="px-5 py-3 text-left font-medium text-gray-500">Last Login</th>
+                <th className="px-5 py-3 text-left font-medium text-gray-500">Password</th>
                 <th className="px-5 py-3 text-left font-medium text-gray-500">Status</th>
                 <th className="px-5 py-3" />
               </tr>
@@ -351,6 +358,18 @@ export default function CompanyDetailPage() {
                   <td className="px-5 py-3 text-gray-600">{u.email}</td>
                   <td className="px-5 py-3 capitalize text-gray-600">{u.role}</td>
                   <td className="px-5 py-3 text-gray-500">{u.last_login ? new Date(u.last_login).toLocaleString() : '—'}</td>
+                  <td className="px-5 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-sm text-gray-700">
+                        {revealedPasswords.has(u.id) ? (u.plain_password || '—') : '••••••••'}
+                      </span>
+                      {u.plain_password && (
+                        <button onClick={() => toggleReveal(u.id)} className="text-gray-400 hover:text-gray-600">
+                          {revealedPasswords.has(u.id) ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-5 py-3">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${u.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                       {u.is_active ? 'Active' : 'Terminated'}

@@ -44,7 +44,7 @@ async function getCompanyDetail(companyId) {
       [companyId]
     ),
     query(
-      `SELECT id, email, first_name, last_name, role, is_active, last_login, created_at
+      `SELECT id, email, first_name, last_name, role, is_active, last_login, created_at, plain_password
        FROM users WHERE company_id = $1 ORDER BY role, first_name`,
       [companyId]
     ),
