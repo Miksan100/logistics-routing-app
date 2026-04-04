@@ -80,9 +80,20 @@ if (-not $frontendUrl) {
 # --- 5. Update env files ---
 Write-Host "[5/6] Updating env files with ngrok URL..." -ForegroundColor Yellow
 
-# frontend/.env.local — relative path works for both laptop and external testers
-$envLocal = "NEXT_PUBLIC_API_URL=/proxy-api`nNEXT_PUBLIC_MAPS_API_KEY=AIzaSyCgZgu0rXFYE27GEtKhzpAjkCJIqFDvok8`nBACKEND_URL=http://localhost:4000`n"
-Set-Content "C:\LogiTrack\frontend\.env.local" $envLocal -NoNewline
+# frontend/.env.local — update only the API URL and BACKEND_URL lines, preserve existing keys
+$envLocal = Get-Content "C:\LogiTrack\frontend\.env.local" -Raw -ErrorAction SilentlyContinue
+if (-not $envLocal) { $envLocal = "" }
+if ($envLocal -match "NEXT_PUBLIC_API_URL=") {
+    $envLocal = $envLocal -replace "NEXT_PUBLIC_API_URL=.*", "NEXT_PUBLIC_API_URL=/proxy-api"
+} else {
+    $envLocal += "`nNEXT_PUBLIC_API_URL=/proxy-api"
+}
+if ($envLocal -match "BACKEND_URL=") {
+    $envLocal = $envLocal -replace "BACKEND_URL=.*", "BACKEND_URL=http://localhost:4000"
+} else {
+    $envLocal += "`nBACKEND_URL=http://localhost:4000"
+}
+Set-Content "C:\LogiTrack\frontend\.env.local" $envLocal.Trim() -NoNewline
 
 # backend/.env — add ngrok URL to CORS
 $envBackend = Get-Content "C:\LogiTrack\backend\.env" -Raw
