@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { jobsApi, odometerApi, trackingApi } from '@/lib/api';
 import type { Job } from '@/types';
 import StatusBadge from '@/components/shared/StatusBadge';
@@ -8,6 +9,8 @@ import {
   MapPin, Clock, Truck, ArrowLeft, Loader2, AlertCircle,
   Play, Zap, CheckCircle2, XCircle, Gauge
 } from 'lucide-react';
+
+const NavigationMap = dynamic(() => import('@/components/driver/NavigationMap'), { ssr: false });
 
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -27,17 +30,28 @@ export default function JobDetailPage() {
     if (!navigator.geolocation) return;
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
+        setDriverLat(pos.coords.latitude);
+        setDriverLng(pos.coords.longitude);
         trackingApi.recordJobGPS(jobId, pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy).catch(() => {});
       },
       () => {},
       { enableHighAccuracy: true, maximumAge: 30000, timeout: 15000 }
     );
+    // Keep screen awake during navigation
+    if ('wakeLock' in navigator) {
+      (navigator as any).wakeLock.request('screen').then((lock: any) => { wakeLockRef.current = lock; }).catch(() => {});
+    }
   };
 
   const stopGPSTracking = () => {
     if (watchIdRef.current !== null) { navigator.geolocation.clearWatch(watchIdRef.current); watchIdRef.current = null; }
+    if (wakeLockRef.current) { wakeLockRef.current.release(); wakeLockRef.current = null; }
   };
 
+  const wakeLockRef = useRef<any>(null);
+  const [showMap, setShowMap] = useState(false);
+  const [driverLat, setDriverLat] = useState<number | null>(null);
+  const [driverLng, setDriverLng] = useState<number | null>(null);
   const [showStartOdo, setShowStartOdo] = useState(false);
   const [startOdo, setStartOdo] = useState('');
   const [showEndOdo, setShowEndOdo] = useState(false);
@@ -145,6 +159,20 @@ export default function JobDetailPage() {
         </div>
       </div>
 
+      {/* In-app navigation map — shown while job is active */}
+      {(showMap || job.status === 'started' || job.status === 'in_progress') && (
+        <NavigationMap
+          pickupAddress={job.pickup_address}
+          deliveryAddress={job.delivery_address}
+          pickupLat={job.pickup_lat}
+          pickupLng={job.pickup_lng}
+          deliveryLat={job.delivery_lat}
+          deliveryLng={job.delivery_lng}
+          driverLat={driverLat}
+          driverLng={driverLng}
+        />
+      )}
+
       {/* Cancellation note */}
       {job.cancellation_reason && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
@@ -188,9 +216,7 @@ export default function JobDetailPage() {
                     await jobsApi.start(job.id);
                     setShowStartOdo(false); setStartOdo('');
                     startGPSTracking(job.id);
-                    const pickup = job.pickup_lat && job.pickup_lng ? `${job.pickup_lat},${job.pickup_lng}` : encodeURIComponent(job.pickup_address);
-                    const delivery = job.delivery_lat && job.delivery_lng ? `${job.delivery_lat},${job.delivery_lng}` : encodeURIComponent(job.delivery_address);
-                    window.open(`https://www.google.com/maps/dir/?api=1&origin=${pickup}&destination=${delivery}`, '_blank');
+                    setShowMap(true);
                   })}
                   disabled={!startOdo || actionLoading}
                   className="btn-primary flex-1 flex items-center justify-center gap-2"
