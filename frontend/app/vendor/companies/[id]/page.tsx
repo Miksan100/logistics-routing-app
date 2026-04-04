@@ -117,7 +117,7 @@ export default function CompanyDetailPage() {
     try {
       const { data } = await vendorApi.post(`/companies/${id}/impersonate`);
       const userEncoded = btoa(JSON.stringify(data.user));
-      window.open(`/admin/impersonate?token=${encodeURIComponent(data.token)}&user=${encodeURIComponent(userEncoded)}`, '_blank');
+      window.open(`/impersonate?token=${encodeURIComponent(data.token)}&user=${encodeURIComponent(userEncoded)}`, '_blank');
     } catch (err: any) {
       setMsg(err.response?.data?.error || 'Failed to access admin portal');
       setTimeout(() => setMsg(''), 4000);
