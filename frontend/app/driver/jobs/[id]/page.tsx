@@ -144,8 +144,8 @@ export default function JobDetailPage() {
         </div>
 
         {/* Weather at pickup and delivery locations */}
-        <WeatherBadge lat={job.pickup_lat} lng={job.pickup_lng} label="Weather at pickup" />
-        <WeatherBadge lat={job.delivery_lat} lng={job.delivery_lng} label="Weather at delivery" />
+        <WeatherBadge lat={job.pickup_lat} lng={job.pickup_lng} address={job.pickup_address} label="Weather at pickup" />
+        <WeatherBadge lat={job.delivery_lat} lng={job.delivery_lng} address={job.delivery_address} label="Weather at delivery" />
 
         {/* Meta */}
         <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap gap-4 text-sm text-gray-500">

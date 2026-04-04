@@ -95,6 +95,7 @@ export default function JobModal({ drivers, vehicles, job, isCopy, onClose, onSa
               <WeatherBadge
                 lat={form.pickupLat ? parseFloat(form.pickupLat) : null}
                 lng={form.pickupLng ? parseFloat(form.pickupLng) : null}
+                address={form.pickupAddress}
                 label="Pickup weather"
               />
             </div>
@@ -113,6 +114,7 @@ export default function JobModal({ drivers, vehicles, job, isCopy, onClose, onSa
               <WeatherBadge
                 lat={form.deliveryLat ? parseFloat(form.deliveryLat) : null}
                 lng={form.deliveryLng ? parseFloat(form.deliveryLng) : null}
+                address={form.deliveryAddress}
                 label="Delivery weather"
               />
             </div>
