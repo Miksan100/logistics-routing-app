@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { jobsApi, driversApi, odometerApi } from '@/lib/api';
 import type { Job, Driver, OdometerLog } from '@/types';
 import StatusBadge from '@/components/shared/StatusBadge';
-import { MapPin, Clock, Truck, Gauge, ChevronRight, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { MapPin, Clock, Truck, Gauge, ChevronRight, CheckCircle, Loader2 } from 'lucide-react';
 
 export default function DriverDashboard() {
   const router = useRouter();
@@ -45,20 +45,6 @@ export default function DriverDashboard() {
         <h1 className="text-xl font-bold text-gray-900">Good {getTimeOfDay()}, {driver?.first_name}!</h1>
         <p className="text-sm text-gray-500 mt-0.5">{today}</p>
       </div>
-
-      {/* Odometer reminder */}
-      {driver?.assigned_vehicle_id && !odometerLog?.start_odometer && (
-        <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="font-semibold text-amber-800 text-sm">Record Start Odometer</p>
-            <p className="text-amber-700 text-xs mt-0.5">Please record your vehicle odometer before starting work</p>
-          </div>
-          <button onClick={() => router.push('/driver/odometer')} className="text-amber-700 font-semibold text-sm">
-            Record
-          </button>
-        </div>
-      )}
 
       {odometerLog?.start_odometer && !odometerLog?.end_odometer && (
         <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl flex items-center gap-2">

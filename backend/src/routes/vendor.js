@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
+const jwt = require('jsonwebtoken');
 const { authenticateVendor } = require('../middleware/vendorAuth');
+const { query } = require('../config/database');
 const vendorAuthService = require('../services/vendorAuthService');
 const vendorService = require('../services/vendorService');
 
@@ -158,6 +160,40 @@ router.post('/companies/:id/admins', authenticateVendor, async (req, res, next) 
     if (err.code === '23505') return res.status(409).json({ error: 'Email already exists' });
     next(err);
   }
+});
+
+router.post('/companies/:id/impersonate', authenticateVendor, async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT u.id, u.company_id, u.email, u.first_name, u.last_name, u.role,
+              c.name AS company_name
+       FROM users u JOIN companies c ON c.id = u.company_id
+       WHERE u.company_id = $1 AND u.role = 'admin' AND u.is_active = true
+       LIMIT 1`,
+      [req.params.id]
+    );
+    if (!result.rows.length) {
+      return res.status(404).json({ error: 'No active admin found for this company' });
+    }
+    const user = result.rows[0];
+    const token = jwt.sign(
+      { userId: user.id, companyId: user.company_id, role: 'admin' },
+      process.env.JWT_SECRET,
+      { expiresIn: '8h' }
+    );
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        companyId: user.company_id,
+        companyName: user.company_name,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        role: 'admin',
+      },
+    });
+  } catch (err) { next(err); }
 });
 
 router.get('/email-history', authenticateVendor, async (req, res, next) => {

@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import vendorApi from '@/lib/vendorApi';
-import { ArrowLeft, Save, Power, PowerOff, Plus, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Power, PowerOff, Plus, Loader2, ExternalLink } from 'lucide-react';
 
 interface Plan { id: string; name: string; price_monthly: number; }
 interface CompanyDetail {
@@ -32,6 +32,7 @@ export default function CompanyDetailPage() {
   const [fetchError, setFetchError] = useState('');
   const [billingType, setBillingType] = useState('monthly');
   const [billingAmount, setBillingAmount] = useState('');
+  const [impersonating, setImpersonating] = useState(false);
   const [showAddAdmin, setShowAddAdmin] = useState(false);
   const [adminForm, setAdminForm] = useState({ adminFirstName: '', adminLastName: '', adminEmail: '', adminPassword: '', adminIdNumber: '' });
   const [addingAdmin, setAddingAdmin] = useState(false);
@@ -111,6 +112,20 @@ export default function CompanyDetailPage() {
     }
   };
 
+  const enterAdminPortal = async () => {
+    setImpersonating(true);
+    try {
+      const { data } = await vendorApi.post(`/companies/${id}/impersonate`);
+      const userEncoded = btoa(JSON.stringify(data.user));
+      window.open(`/admin/impersonate?token=${encodeURIComponent(data.token)}&user=${encodeURIComponent(userEncoded)}`, '_blank');
+    } catch (err: any) {
+      setMsg(err.response?.data?.error || 'Failed to access admin portal');
+      setTimeout(() => setMsg(''), 4000);
+    } finally {
+      setImpersonating(false);
+    }
+  };
+
   const toggleStatus = async () => {
     if (!detail) return;
     const newActive = !detail.company.is_active;
@@ -156,16 +171,26 @@ export default function CompanyDetailPage() {
             <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">Suspended</span>
           )}
         </div>
-        <button
-          onClick={toggleStatus}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            company.is_active
-              ? 'bg-red-50 text-red-700 hover:bg-red-100'
-              : 'bg-green-50 text-green-700 hover:bg-green-100'
-          }`}
-        >
-          {company.is_active ? <><PowerOff className="w-4 h-4" /> Suspend</> : <><Power className="w-4 h-4" /> Activate</>}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={enterAdminPortal}
+            disabled={impersonating}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+          >
+            {impersonating ? <Loader2 className="w-4 h-4 animate-spin" /> : <ExternalLink className="w-4 h-4" />}
+            Enter Admin Portal
+          </button>
+          <button
+            onClick={toggleStatus}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              company.is_active
+                ? 'bg-red-50 text-red-700 hover:bg-red-100'
+                : 'bg-green-50 text-green-700 hover:bg-green-100'
+            }`}
+          >
+            {company.is_active ? <><PowerOff className="w-4 h-4" /> Suspend</> : <><Power className="w-4 h-4" /> Activate</>}
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
