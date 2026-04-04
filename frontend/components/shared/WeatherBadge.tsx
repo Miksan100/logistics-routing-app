@@ -80,15 +80,15 @@ async function fetchWeather(lat: number, lng: number): Promise<WeatherData | nul
   });
   if (!r.ok) return null;
   const data = await r.json();
-  const c = data.currentConditions;
-  if (!c) return null;
+  // Google Weather API returns fields at the root level (no currentConditions wrapper)
+  if (!data.temperature) return null;
   return {
-    temperature: Math.round(c.temperature?.degrees ?? c.temperature ?? 0),
-    feelsLike: Math.round(c.feelsLikeTemperature?.degrees ?? c.feelsLikeTemperature ?? 0),
-    condition: c.weatherCondition?.description?.text ?? c.weatherCondition ?? '',
-    humidity: Math.round(c.relativeHumidity ?? 0),
-    windSpeed: Math.round(c.wind?.speed?.value ?? c.windSpeed ?? 0),
-    iconUrl: c.weatherCondition?.iconBaseUri ? `${c.weatherCondition.iconBaseUri}4x.png` : undefined,
+    temperature: Math.round(data.temperature?.degrees ?? 0),
+    feelsLike: Math.round(data.feelsLikeTemperature?.degrees ?? 0),
+    condition: data.weatherCondition?.description?.text ?? '',
+    humidity: Math.round(data.relativeHumidity ?? 0),
+    windSpeed: Math.round(data.wind?.speed?.value ?? 0),
+    iconUrl: data.weatherCondition?.iconBaseUri ? `${data.weatherCondition.iconBaseUri}4x.png` : undefined,
   };
 }
 

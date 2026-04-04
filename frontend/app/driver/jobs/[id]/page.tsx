@@ -127,7 +127,7 @@ export default function JobDetailPage() {
             <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
               <MapPin className="w-4 h-4 text-green-600" />
             </div>
-            <div className="flex-1 pb-3 border-l-2 border-dashed border-gray-200 ml-[-20px] pl-7">
+            <div className="flex-1 pb-3">
               <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">Pickup</p>
               <p className="text-gray-900 font-medium mt-0.5">{job.pickup_address}</p>
             </div>
